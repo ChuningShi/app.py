@@ -141,7 +141,7 @@ def add_friend():
 	if flask.request.method == 'GET':
 		return '''
 			   <form action='friend' method='POST'>
-				<input type='text' name='friend_email' id='friend_email' placeholder='friend email'></input>
+				<input type='text' name='friendID' id='friendID' placeholder='friend email'></input>
 				<input type='submit' name='submit'></input>
 			   </form></br>
 		   <a href='/'>Home</a>
@@ -149,9 +149,9 @@ def add_friend():
 	#The request method is POST (page is recieving data)
 	friendID = flask.request.form['friendID']
 	cursor = conn.cursor()
-
+	uid = getUserIdFromEmail(flask_login.current_user.id)
 	if cursor.execute("SELECT user_id FROM Users WHERE user_id = '{0}'".format(friendID)):
-		cursor.execute("INSERT INTO Friendship (UID1, UID2) VALUES ('{0}', '{1}')".format(flask_login.current_user.id, friendID))
+		cursor.execute("INSERT INTO Friendship (UID1, UID2) VALUES ('{0}', '{1}')".format(uid, friendID))
 		conn.commit()
 		return "You are now friends with {0}".format(friendID)
 	else:

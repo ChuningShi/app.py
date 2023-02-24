@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Top 10 Users</title>
+</head>
+<body>
+	<h1>Top 10 Users</h1>
+	<table>
+		<tr>
+			<th>Rank</th>
+			<th>User Email</th>
+			<th>Contribution Score</th>
+		</tr>
+		{% for rank, user in top_users %}
+		<tr>
+			<td>{{ rank }}</td>
+			<td>{{ user[0] }}</td>
+			<td>{{ user[1] }}</td>
+		</tr>
+		{% endfor %}
+	</table>
+</body>
+</html>

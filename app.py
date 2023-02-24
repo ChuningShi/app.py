@@ -12,7 +12,7 @@ app.secret_key = 'super secret string'  # Change this!
 
 #These will need to be changed according to your creditionals
 app.config['MYSQL_DATABASE_USER'] = 'root'
-app.config['MYSQL_DATABASE_PASSWORD'] = '081828'
+app.config['MYSQL_DATABASE_PASSWORD'] = 'SCning149192'
 app.config['MYSQL_DATABASE_DB'] = 'photoshare'
 app.config['MYSQL_DATABASE_HOST'] = 'localhost'
 mysql.init_app(app)
@@ -187,6 +187,38 @@ def list_friend():
 	cursor.execute("SELECT UID2 FROM Friendship WHERE UID1 = '{0}' OR UID2 = '{0}'".format(uid))
 	data = cursor.fetchall()
 	return "You are friends with {0}".format(data)
+
+
+def photo_count(email):
+	cursor = conn.cursor()
+	cursor.execute("SELECT COUNT(*) FROM Pictures WHERE email = '{0}'".format(email))
+	count = cursor.fetchall()
+	count = count[0][0]
+	return count
+
+def comment_count(email):
+	cursor = conn.cursor()
+	cursor.execute("SELECT COUNT(*) FROM Comments WHERE email = '{0}'".format(email))
+	count = cursor.fetchall()
+	count = count[0][0]
+	return count
+
+@app.route('/top_10_users')
+def user_activity():
+	cursor = conn.cursor()
+	cursor.execute("SELECT email FROM Users")
+	data = cursor.fetchall()
+
+	scores = {}
+	for user in data:
+		each_score = photo_count(user[0]) + comment_count(user[0])
+		scores[user[0]] = each_score
+		sort = sorted(scores.items(), key=lambda x: x[1], reverse=True)
+		top_10 = sort[:10]
+		return render_template('top_users.html', users=top_10)
+
+
+
 
 def getUsersPhotos(uid):
 	cursor = conn.cursor()

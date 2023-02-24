@@ -8,10 +8,9 @@
 
 	<!-- Form to add a new friend -->
 	<h2>Add a new friend:</h2>
-	<form>
-		<label for="new-friend">New Friend:</label>
-		<input type="text" id="new-friend" name="new-friend">
-		<button type="submit">Add</button>
+	<form action="{{ url_for('register_user') }}" method='post'>
+		<input type='text' name='friendID' id='friendID' placeholder='friendID'></input>
+		<input type='submit' name='submit'></input>
 	</form>
 
 	<!-- Search form to find new friends -->
@@ -51,5 +50,7 @@
 		document.querySelector("form").addEventListener("submit", addFriend);
 		document.querySelectorAll("form")[1].addEventListener("submit", searchFriends);
 	</script>
+
+<a href='/'>Home</a>
 </body>
 </html>

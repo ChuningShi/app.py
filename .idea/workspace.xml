@@ -4,11 +4,10 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="2b9e6f90-94e8-48a7-916b-0e33ba147e7e" name="Changes" comment="Friend">
-      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/skeleton.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/skeleton.iml" afterDir="false" />
+    <list default="true" id="2b9e6f90-94e8-48a7-916b-0e33ba147e7e" name="Changes" comment="Friend working now">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/app.py" beforeDir="false" afterPath="$PROJECT_DIR$/app.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/templates/friend.html" beforeDir="false" afterPath="$PROJECT_DIR$/templates/friend.html" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -106,7 +105,21 @@
       <option name="project" value="LOCAL" />
       <updated>1677278150353</updated>
     </task>
-    <option name="localTasksCounter" value="2" />
+    <task id="LOCAL-00002" summary="Friend 2nd">
+      <created>1677279041207</created>
+      <option name="number" value="00002" />
+      <option name="presentableId" value="LOCAL-00002" />
+      <option name="project" value="LOCAL" />
+      <updated>1677279041207</updated>
+    </task>
+    <task id="LOCAL-00003" summary="Friend working now">
+      <created>1677279477730</created>
+      <option name="number" value="00003" />
+      <option name="presentableId" value="LOCAL-00003" />
+      <option name="project" value="LOCAL" />
+      <updated>1677279477730</updated>
+    </task>
+    <option name="localTasksCounter" value="4" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -125,6 +138,8 @@
   </component>
   <component name="VcsManagerConfiguration">
     <MESSAGE value="Friend" />
-    <option name="LAST_COMMIT_MESSAGE" value="Friend" />
+    <MESSAGE value="Friend 2nd" />
+    <MESSAGE value="Friend working now" />
+    <option name="LAST_COMMIT_MESSAGE" value="Friend working now" />
   </component>
 </project>

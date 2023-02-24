@@ -140,8 +140,18 @@ def register_user():
 def add_friend():
 	if flask.request.method == 'GET':
 		return '''
+		<h2>Add a new friend:</h2>
 			   <form action='friend' method='POST'>
-				<input type='text' name='friendID' id='friendID' placeholder='friend email'></input>
+				<input type='text' name='friendID' id='friendID' placeholder='friend ID'></input>
+				<input type='submit' name='submit'></input>
+			   </form></br>
+			   <h2>Search for a friend:</h2>
+			   <form action='friend_search' method='POST'>
+				<input type='text' name='friendID' id='friendID' placeholder='friend ID'></input>
+				<input type='submit' name='submit'></input>
+			   </form></br>
+			   <h2>List all friends:</h2>
+			   <form action='friend_list' method='POST'>
 				<input type='submit' name='submit'></input>
 			   </form></br>
 		   <a href='/'>Home</a>
@@ -156,6 +166,27 @@ def add_friend():
 		return "You are now friends with {0}".format(friendID)
 	else:
 		return "No user with ID {0} found".format(friendID)
+
+@app.route('/friend_search', methods=['POST'])
+@flask_login.login_required
+def search_friend():
+	print('get')
+	friendID = flask.request.form['friendID']
+	cursor = conn.cursor()
+	uid = getUserIdFromEmail(flask_login.current_user.id)
+	if cursor.execute("SELECT user_id FROM Users WHERE user_id = '{0}'".format(friendID)):
+		return "User with ID {0} found".format(friendID)
+	else:
+		return "No user with ID {0} found".format(friendID)
+
+@app.route('/friend_list', methods=['POST'])
+@flask_login.login_required
+def list_friend():
+	uid = getUserIdFromEmail(flask_login.current_user.id)
+	cursor = conn.cursor()
+	cursor.execute("SELECT UID2 FROM Friendship WHERE UID1 = '{0}' OR UID2 = '{0}'".format(uid))
+	data = cursor.fetchall()
+	return "You are friends with {0}".format(data)
 
 def getUsersPhotos(uid):
 	cursor = conn.cursor()

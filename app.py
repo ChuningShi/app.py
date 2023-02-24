@@ -12,7 +12,7 @@ app.secret_key = 'super secret string'  # Change this!
 
 #These will need to be changed according to your creditionals
 app.config['MYSQL_DATABASE_USER'] = 'root'
-app.config['MYSQL_DATABASE_PASSWORD'] = 'SCning149192'
+app.config['MYSQL_DATABASE_PASSWORD'] = '081828'
 app.config['MYSQL_DATABASE_DB'] = 'photoshare'
 app.config['MYSQL_DATABASE_HOST'] = 'localhost'
 mysql.init_app(app)
@@ -57,13 +57,6 @@ def request_loader(request):
 	pwd = str(data[0][0] )
 	user.is_authenticated = request.form['password'] == pwd
 	return user
-
-'''
-A new page looks like this:
-@app.route('new_page_name')
-def new_page_function():
-	return new_page_html
-'''
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -217,8 +210,42 @@ def user_activity():
 		top_10 = sort[:10]
 		return render_template('top_users.html', users=top_10)
 
+'''Album and Photo Management
+Photo and album browsing. Every visitor to the site, registered or not, should be allowed to browse photos. In this 
+project we will assume that all photos and albums are made public by their owners.
+Photo and album creating. After registration, users can start creating albums and uploading photos. Users should 
+also be able to delete both albums and photos. If a non-empty album is deleted, its photos should also be purged. Users 
+should only be allowed to modify and delete albums/photos owned by themselves.'''
 
+@app.route('/album', methods=['GET', 'POST'])
+def album():
+	if flask.request.method == 'GET':
+		return '''
+		<h2>Create a new album:</h2>
+			   <form action='album' method='POST'>
+				<input type='text' name='albumName' id='albumName' placeholder='album name'></input>
+				<input type='submit' name='submit'></input>
+			   </form></br>
+			   <h2>List all albums:</h2>
+			   <form action='album_list' method='POST'>
+				<input type='submit' name='submit'></input>
+			   </form></br>
+		   <a href='/'>Home</a>
+			   '''
+	#The request method is POST (page is recieving data)
+	albumName = flask.request.form['albumName']
+	cursor = conn.cursor()
+	uid = getUserIdFromEmail(flask_login.current_user.id)
+	cursor.execute("INSERT INTO Albums (Name, user_id) VALUES ('{0}', '{1}')".format(albumName, uid))
+	conn.commit()
+	return "Album {0} created".format(albumName)
 
+@app.route('/album_list', methods=['POST'])
+def list_album():
+	cursor = conn.cursor()
+	cursor.execute("SELECT Name FROM Albums")
+	data = cursor.fetchall()
+	return "You have the following albums: {0}".format(data)
 
 def getUsersPhotos(uid):
 	cursor = conn.cursor()
@@ -240,6 +267,11 @@ def isEmailUnique(email):
 		return True
 #end login code
 
+def getAlbumIDfromName(name):
+	cursor = conn.cursor()
+	cursor.execute("SELECT album_id FROM Albums WHERE Name = '{0}'".format(name))
+	return cursor.fetchone()[0]
+
 @app.route('/profile')
 @flask_login.login_required
 def protected():
@@ -257,10 +289,11 @@ def upload_file():
 	if request.method == 'POST':
 		uid = getUserIdFromEmail(flask_login.current_user.id)
 		imgfile = request.files['photo']
+		album_id = getAlbumIDfromName(request.form.get('album'))
 		caption = request.form.get('caption')
 		photo_data =imgfile.read()
 		cursor = conn.cursor()
-		cursor.execute('''INSERT INTO Pictures (imgdata, user_id, caption) VALUES (%s, %s, %s )''', (photo_data, uid, caption))
+		cursor.execute('''INSERT INTO Pictures (imgdata, user_id, caption, album_id) VALUES (%s, %s, %s )''', (photo_data, uid, caption, album_id))
 		conn.commit()
 		return render_template('hello.html', name=flask_login.current_user.id, message='Photo uploaded!', photos=getUsersPhotos(uid), base64=base64)
 	#The method is GET so we return a  HTML form to upload the a photo.

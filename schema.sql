@@ -11,7 +11,7 @@ password VARCHAR(40) NOT NULL,
 dob DATE NOT NULL, 
 hometown VARCHAR(40), 
 fname VARCHAR(40) NOT NULL,
-Iname VARCHAR(40) NOT NULL, 
+lname VARCHAR(40) NOT NULL,
 PRIMARY KEY (user_id)
 );
 

@@ -135,6 +135,38 @@ def register_user():
 		print("couldn't find all tokens")
 		return flask.redirect(flask.url_for('register'))
 
+'''Adding and listing Friends. You should allow a user to add a new friend to the friend list. For simplicity, you do not 
+need to verify the friendship relationship, i.e., the user does not need the new friend’s confirmation to add her to the 
+friend list. Also, you should allow the user to search for other users in the system (to find new friends to add). Finally, 
+you should allow a user to list his/her friends.'''
+
+@app.route('/add_friend', methods=['GET', 'POST'])
+@flask_login.login_required
+def add_friend():
+	if flask.request.method == 'GET':
+		return '''
+			   <form action='add_friend' method='POST'>
+				<input type='text' name='friend_email' id='friend_email' placeholder='friend email'></input>
+				<input type='submit' name='submit'></input>
+			   </form></br>
+		   <a href='/'>Home</a>
+			   '''
+	#The request method is POST (page is recieving data)
+	friend_email = flask.request.form['friend_email']
+	cursor = conn.cursor()
+	#check if email is registered
+	if cursor.execute("SELECT email FROM Users WHERE email = '{0}'".format(friend_email)):
+		#check if user is already friends with friend
+		if cursor.execute("SELECT user_id FROM Friends WHERE user_id = '{0}' AND friend_id = '{1}'".format(flask_login.current_user.id, getUserIdFromEmail(friend_email))):
+			return "You are already friends with {0}".format(friend_email)
+		else:
+			#add friend
+			cursor.execute("INSERT INTO Friends (user_id, friend_id) VALUES ('{0}', '{1}')".format(flask_login.current_user.id, getUserIdFromEmail(friend_email)))
+			conn.commit()
+			return "You are now friends with {0}".format(friend_email)
+	else:
+		return "No user with email {0} found".format(friend_email)
+
 def getUsersPhotos(uid):
 	cursor = conn.cursor()
 	cursor.execute("SELECT imgdata, picture_id, caption FROM Pictures WHERE user_id = '{0}'".format(uid))

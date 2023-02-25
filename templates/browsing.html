@@ -1,0 +1,12 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Photos</title>
+  </head>
+  <body>
+    <h1>Photos we got</h1>
+    {% for photo in photo %}
+  <img src="{{ photo[3] }}" alt="{{ photo[2] }}"
+       {% endfor %}
+  </body>
+</html>

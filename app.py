@@ -273,7 +273,12 @@ def upload_file():
 @app.route("/", methods=['GET'])
 def hello():
 	return render_template('hello.html', message='Welecome to Photoshare')
-
+@app.route("/Browsing_photos")
+def browsing_photo():
+	cursor = conn.cursor()
+	cursor.execute("SELECT * FROM Pictures")
+	photo = cursor.fetchall()
+	return render_template('browsing.html', photo=photo)
 
 if __name__ == "__main__":
 	app.run(port=5000, debug=True)

@@ -210,13 +210,6 @@ def user_activity():
 		top_10 = sort[:10]
 		return render_template('top_users.html', users=top_10)
 
-'''Album and Photo Management
-Photo and album browsing. Every visitor to the site, registered or not, should be allowed to browse photos. In this 
-project we will assume that all photos and albums are made public by their owners.
-Photo and album creating. After registration, users can start creating albums and uploading photos. Users should 
-also be able to delete both albums and photos. If a non-empty album is deleted, its photos should also be purged. Users 
-should only be allowed to modify and delete albums/photos owned by themselves.'''
-
 @app.route('/album', methods=['GET', 'POST'])
 def album():
 	if flask.request.method == 'GET':
@@ -233,6 +226,11 @@ def album():
 			   	<h2> delete an album:</h2>
 			   <form action='album_delete' method='POST'>
 			   				<input type='text' name='deleteName' id='deleteName' placeholder='album name'></input>
+			   								<input type='submit' name='submit'></input>
+			   </form></br>
+			   <h2> View all photos in an album:</h2>
+			   <form action='album_view' method='POST'>
+			   				<input type='text' name='viewName' id='viewName' placeholder='album name'></input>
 			   								<input type='submit' name='submit'></input>
 			   </form></br>
 		   <a href='/'>Home</a>
@@ -252,23 +250,11 @@ def list_album():
 	data = cursor.fetchall()
 	return "You have the following albums: {0}".format(data)
 
-'''
-# view and delete photos in album
-@app.route('/album/<albumName>', methods=['GET', 'POST'])
-def album_photos(albumName):
-	if flask.request.method == 'GET':
-		# get all photos in album
-		cursor = conn.cursor()
-		cursor.execute("SELECT imgdata, caption FROM Pictures WHERE album_id = '{0}'".format(albumName))
-		data = cursor.fetchall()
-		return render_template('album.html', album=albumName, photos=data)
-	#The request method is POST (page is recieving data)
-	photoID = flask.request.form['photoID']
-	cursor = conn.cursor()
-	# show all photos in album
-	cursor.execute("SELECT imgdata, caption FROM Pictures WHERE album_id = '{0}'".format(albumName))
-	data = cursor.fetchall()
-	'''
+@app.route('/album_view', methods=['POST'])
+def view_album():
+	aid = flask.request.form['viewName']
+	photo = getAlbumsPhotos(getAlbumIDfromName(aid))
+	return render_template('hello.html', name=flask_login.current_user.id, photos=photo, base64=base64)
 
 # delete album
 @app.route('/album_delete', methods=['POST'])
@@ -282,6 +268,11 @@ def delete_album():
 def getUsersPhotos(uid):
 	cursor = conn.cursor()
 	cursor.execute("SELECT imgdata, picture_id, caption FROM Pictures WHERE user_id = '{0}'".format(uid))
+	return cursor.fetchall() #NOTE return a list of tuples, [(imgdata, pid, caption), ...]
+
+def getAlbumsPhotos(aid):
+	cursor = conn.cursor()
+	cursor.execute("SELECT imgdata, picture_id, caption FROM Pictures WHERE album_id = '{0}'".format(aid))
 	return cursor.fetchall() #NOTE return a list of tuples, [(imgdata, pid, caption), ...]
 
 def getUserIdFromEmail(email):
@@ -334,6 +325,7 @@ def upload_file():
 #end photo uploading code
 
 
+
 #default page
 @app.route("/", methods=['GET'])
 def hello():
@@ -343,7 +335,7 @@ def browsing_photo():
 	cursor = conn.cursor()
 	cursor.execute("SELECT * FROM Pictures")
 	photo = cursor.fetchall()
-	return render_template('browsing.html', photo=photo)
+	return render_template('browsing.html', photos=photo)
 
 if __name__ == "__main__":
 	app.run(port=5000, debug=True)

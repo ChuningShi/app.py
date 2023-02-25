@@ -324,7 +324,66 @@ def upload_file():
 		return render_template('upload.html')
 #end photo uploading code
 
+@app.route('/tag', methods=['GET', 'POST'])
+def tag():
+	if request.method == 'POST':
+		tag = request.form.get('tag')
+		cursor = conn.cursor()
+		cursor.execute("SELECT imgdata, picture_id, caption FROM Pictures WHERE caption = '{0}'".format(tag))
+		photo = cursor.fetchall()
+		return render_template('hello.html', photos=photo, base64=base64)
+	else:
+		return ''' <form action="" method="post" enctype="multipart/form-data">
+		<input type="text" name="tag" placeholder="tag">
+		<input type="submit" value="Submit">
+		</form> '''
 
+@app.route('/tag_all', methods=['GET', 'POST'])
+def tag_all():
+	if request.method == 'POST':
+		tag = request.form.get('tag')
+		cursor = conn.cursor()
+		cursor.execute("SELECT imgdata, picture_id, caption FROM Pictures WHERE caption = '{0}'".format(tag))
+		photo = cursor.fetchall()
+		return render_template('hello.html', photos=photo, base64=base64)
+	else:
+		return render_template('tag_all.html')
+
+@app.route('/tag_popular', methods=['GET', 'POST'])
+def tag_popular():
+	if request.method == 'POST':
+		tag = request.form.get('tag')
+		cursor = conn.cursor()
+
+		# get 3 most popular photos with tag
+		cursor.execute("SELECT Tags.name, COUNT(*) AS tag_count\
+						FROM Tags\
+						JOIN Tagged ON Tags.tag_id = Tagged.tag_id\
+						GROUP BY Tags.name\
+						ORDER BY tag_count DESC\
+						LIMIT 3;\
+						".format(tag))
+		data = cursor.fetchall()
+		return data
+
+@app.route('/tag_search', methods=['GET', 'POST'])
+def tag_search():
+	if request.method == 'POST':
+		raw_tag = request.form.get('tag')
+		tag=raw_tag.split(' ')
+		cursor = conn.cursor()
+		cursor.execute("SELECT DISTINCT Pictures.picture_id, Pictures.caption\
+						FROM Pictures\
+						JOIN Tagged ON Pictures.picture_id = Tagged.picture_id\
+						JOIN Tags ON Tagged.tag_id = Tags.tag_id\
+						WHERE Tags.name IN ('{0}')\
+						GROUP BY Pictures.picture_id, Pictures.caption\
+						HAVING COUNT(DISTINCT Tags.name) = 2;\
+						".format(tag))
+		photo = cursor.fetchall()
+		return render_template('hello.html', photos=photo, base64=base64)
+	else:
+		return render_template('tag_search.html')
 
 #default page
 @app.route("/", methods=['GET'])

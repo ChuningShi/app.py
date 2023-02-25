@@ -230,6 +230,11 @@ def album():
 			   <form action='album_list' method='POST'>
 				<input type='submit' name='submit'></input>
 			   </form></br>
+			   	<h2> delete an album:</h2>
+			   <form action='album_delete' method='POST'>
+			   				<input type='text' name='deleteName' id='deleteName' placeholder='album name'></input>
+			   								<input type='submit' name='submit'></input>
+			   </form></br>
 		   <a href='/'>Home</a>
 			   '''
 	#The request method is POST (page is recieving data)
@@ -245,7 +250,37 @@ def list_album():
 	cursor = conn.cursor()
 	cursor.execute("SELECT Name FROM Albums")
 	data = cursor.fetchall()
+
+	''' Users should 
+also be able to delete both albums and photos. If a non-empty album is deleted, its photos should also be purged. Users 
+should only be allowed to modify and delete albums/photos owned by themselves.'''
+
 	return "You have the following albums: {0}".format(data)
+
+# view and delete photos in album
+@app.route('/album/<albumName>', methods=['GET', 'POST'])
+def album_photos(albumName):
+	if flask.request.method == 'GET':
+		# get all photos in album
+		cursor = conn.cursor()
+		cursor.execute("SELECT imgdata, caption FROM Pictures WHERE album_id = '{0}'".format(albumName))
+		data = cursor.fetchall()
+		return render_template('album.html', album=albumName, photos=data)
+	#The request method is POST (page is recieving data)
+	photoID = flask.request.form['photoID']
+	cursor = conn.cursor()
+	cursor.execute("DELETE FROM Pictures WHERE picture_id = '{0}'".format(photoID))
+	conn.commit()
+	return "Photo {0} deleted".format(photoID)
+
+# delete album
+@app.route('/album_delete', methods=['POST'])
+def delete_album():
+	albumName = flask.request.form['deleteName']
+	cursor = conn.cursor()
+	cursor.execute("DELETE FROM Albums WHERE Name = '{0}'".format(albumName))
+	conn.commit()
+	return "Album {0} deleted".format(albumName)
 
 def getUsersPhotos(uid):
 	cursor = conn.cursor()
@@ -289,11 +324,11 @@ def upload_file():
 	if request.method == 'POST':
 		uid = getUserIdFromEmail(flask_login.current_user.id)
 		imgfile = request.files['photo']
-		album_id = getAlbumIDfromName(request.form.get('album'))
+		album_id = getAlbumIDfromName(request.form.get('album_id'))
 		caption = request.form.get('caption')
 		photo_data =imgfile.read()
 		cursor = conn.cursor()
-		cursor.execute('''INSERT INTO Pictures (imgdata, user_id, caption, album_id) VALUES (%s, %s, %s )''', (photo_data, uid, caption, album_id))
+		cursor.execute('''INSERT INTO Pictures (imgdata, user_id, caption, album_id) VALUES (%s, %s, %s, %s )''', (photo_data, uid, caption, album_id))
 		conn.commit()
 		return render_template('hello.html', name=flask_login.current_user.id, message='Photo uploaded!', photos=getUsersPhotos(uid), base64=base64)
 	#The method is GET so we return a  HTML form to upload the a photo.

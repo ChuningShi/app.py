@@ -137,7 +137,26 @@ def getUsersPhotos(uid):
 def getAlbumsPhotos(aid):
 	cursor = conn.cursor()
 	cursor.execute("SELECT imgdata, picture_id, caption FROM Pictures WHERE album_id = '{0}'".format(aid))
-	return cursor.fetchall() #NOTE return a list of tuples, [(imgdata, pid, caption), ...]
+	data=cursor.fetchall()
+	ret=[]
+	# add count of likes for each photo
+	for i in data:
+		cursor1 = conn.cursor()
+		cursor1.execute("SELECT user_id FROM Likes WHERE picture_id = '{0}'".format(i[1]))
+		like = cursor1.fetchall()
+		like = ', '.join([str(i[0]) for i in like])
+
+		cursor2 = conn.cursor()
+		cursor2.execute("SELECT COUNT(*) FROM Likes WHERE picture_id = '{0}'".format(i[1]))
+		like_count = cursor2.fetchone()[0]
+
+		# get comment
+		cursor3 = conn.cursor()
+		cursor3.execute("SELECT user_id, text, date FROM Comments WHERE picture_id = '{0}'".format(i[1]))
+
+		ret.append((i[0],i[1],i[2], like, like_count, cursor3.fetchall()))
+
+	return ret #NOTE return a list of tuples, [(imgdata, pid, caption, like, like_count), ...]
 
 def getUserIdFromEmail(email):
 	cursor = conn.cursor()
@@ -220,8 +239,8 @@ def list_friend():
 	cursor = conn.cursor()
 	cursor.execute("SELECT UID2 FROM Friendship WHERE UID1 = '{0}' OR UID2 = '{0}'".format(uid))
 	data = cursor.fetchall()
-	data= [x[0] for x in data]
-	data= ', '.join(data)
+	# data= [x[0] for x in data]
+	# data= ', '.join(data)
 	return "You are friends with {0}".format(data)
 
 @app.route('/friend_recommendation', methods=['GET', 'POST'])
@@ -350,8 +369,6 @@ def delete_album():
 	conn.commit()
 	return "Album {0} deleted".format(albumName)
 
-
-
 @app.route('/profile')
 @flask_login.login_required
 def protected():
@@ -388,27 +405,6 @@ def delete_photo(photo_id):
 	conn.commit()
 	return render_template('hello.html', message='Deleted successfully!')
 
-@app.route('/add_comment/<photo_id>')
-def add_comment(photo_id):
-	cursor = conn.cursor()
-	cursor.execute("SELECT imgdata, picture_id, caption FROM Pictures WHERE picture_id = '{0}'".format(photo_id))
-	photo = cursor.fetchall()
-	return render_template('comment.html', photos=photo, base64=base64)
-
-@app.route('/like/<photo_id>')
-def like_photo(photo_id):
-	cursor = conn.cursor()
-	cursor.execute("SELECT imgdata, picture_id, caption FROM Pictures WHERE picture_id = '{0}'".format(photo_id))
-	photo = cursor.fetchall()
-	return render_template('hello.html', photos=photo, base64=base64)
-
-@app.route('/add_tag/<photo_id>')
-def add_tag(photo_id):
-	cursor = conn.cursor()
-	cursor.execute("SELECT imgdata, picture_id, caption FROM Pictures WHERE picture_id = '{0}'".format(photo_id))
-	photo = cursor.fetchall()
-	return render_template('tag.html', photos=photo, base64=base64)
-
 # ------------------- tag ------------------- #
 
 @app.route('/tag', methods=['GET', 'POST'])
@@ -426,6 +422,13 @@ def tag():
 		</form> 
 		<button onclick="history.back()">Go Back</button>
 		'''
+
+@app.route('/add_tag/<photo_id>')
+def add_tag(photo_id):
+	cursor = conn.cursor()
+	cursor.execute("SELECT imgdata, picture_id, caption FROM Pictures WHERE picture_id = '{0}'".format(photo_id))
+	photo = cursor.fetchall()
+	return render_template('tag.html', photos=photo, base64=base64)
 
 @app.route('/tag_all', methods=['GET', 'POST'])
 def tag_all():
@@ -475,45 +478,43 @@ def tag_search():
 		return render_template('tag_search.html')
 
 # ------------------- comment ------------------- #
-@app.route('/comment', methods=['GET', 'POST'])
+@app.route('/add_comment', methods=['POST'])
 def comment():
-	if request.method == 'POST':
-		comment = request.form.get('comment')
-		picture_id = request.form.get('picture_id')
-		cursor = conn.cursor()
-		cursor.execute('''INSERT INTO Comments (comment, picture_id) VALUES (%s, %s)''', (comment, picture_id))
-		conn.commit()
-		return render_template('hello.html', message='Comment added!')
-	else:
-		return ''' <form action="" method="post" enctype="multipart/form-data">
-		<input type="text" name="comment" placeholder="comment">
-		<input type="text" name="picture_id" placeholder="picture_id">
-		<input type="submit" value="Submit">
-		</form> 
-		<button onclick="history.back()">Go Back</button>
-		'''
+	comment = request.form.get('comment')
+	photo_id = request.form.get('photo_id')
+	try:
+		uid = getUserIdFromEmail(flask_login.current_user.id)
+
+	except:
+		uid=0 # visitor comment? conflict with sql schema
+
+	# Users cannot leave comments on their own photos
+	check = conn.cursor()
+	# BUG- syntax error
+	check.execute("SELECT COUNT(*) FROM Pictures WHERE picture_id = '{0}' AND user_id = '{1}".format(photo_id, uid))
+	count= check.fetchone()
+	if count[0] != 0:
+		return render_template('hello.html', message='You cannot comment on your own photo!')
+
+	cursor = conn.cursor()
+	cursor.execute('''INSERT INTO Comments (text, picture_id, user_id) VALUES (%s, %s, %s)''', (comment, photo_id, uid))
+	conn.commit()
+	return render_template('hello.html', message='Comment added!')
+
 
 # ------------------- like ------------------- #
-@app.route('/like', methods=['GET', 'POST'])
-def like():
-	if request.method == 'POST':
-		picture_id = request.form.get('picture_id')
-		cursor = conn.cursor()
-		cursor.execute('''INSERT INTO Likes (picture_id) VALUES (%s)''', (picture_id))
-		conn.commit()
-		return render_template('hello.html', message='Liked!')
-	else:
-		return ''' <form action="" method="post" enctype="multipart/form-data">
-		<input type="text" name="picture_id" placeholder="picture_id">
-		<input type="submit" value="Submit">
-		</form> 
-		<button onclick="history.back()">Go Back</button>
-		'''
+@app.route('/like/<photo_id>')
+def like(photo_id):
+	cursor = conn.cursor()
+	uid = getUserIdFromEmail(flask_login.current_user.id)
+	cursor.execute('''INSERT INTO Likes (picture_id, user_id) VALUES (%s, %s)''', (photo_id, uid))
+	conn.commit()
+	return render_template('hello.html', message='Liked!')
 
 #default page
 @app.route("/", methods=['GET'])
 def hello():
-	return render_template('hello.html', message='Welecome to Photoshare')
+	return render_template('hello.html', message='Welcome to Photoshare')
 
 if __name__ == "__main__":
 	app.run(port=5000, debug=True)

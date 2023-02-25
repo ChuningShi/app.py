@@ -250,13 +250,9 @@ def list_album():
 	cursor = conn.cursor()
 	cursor.execute("SELECT Name FROM Albums")
 	data = cursor.fetchall()
-
-	''' Users should 
-also be able to delete both albums and photos. If a non-empty album is deleted, its photos should also be purged. Users 
-should only be allowed to modify and delete albums/photos owned by themselves.'''
-
 	return "You have the following albums: {0}".format(data)
 
+'''
 # view and delete photos in album
 @app.route('/album/<albumName>', methods=['GET', 'POST'])
 def album_photos(albumName):
@@ -269,9 +265,10 @@ def album_photos(albumName):
 	#The request method is POST (page is recieving data)
 	photoID = flask.request.form['photoID']
 	cursor = conn.cursor()
-	cursor.execute("DELETE FROM Pictures WHERE picture_id = '{0}'".format(photoID))
-	conn.commit()
-	return "Photo {0} deleted".format(photoID)
+	# show all photos in album
+	cursor.execute("SELECT imgdata, caption FROM Pictures WHERE album_id = '{0}'".format(albumName))
+	data = cursor.fetchall()
+	'''
 
 # delete album
 @app.route('/album_delete', methods=['POST'])

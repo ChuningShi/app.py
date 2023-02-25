@@ -15,6 +15,10 @@
 
         <li>{{photo[2]}}<br>
         <img src='data:image/jpg;base64, {{ base64.b64encode(photo[0]).decode("ascii") }}'/></li>
+        <button onclick="location.href='/delete/{{photo[1]}}'">Delete</button>
+        <button onclick="location.href='/add_comment/{{photo[1]}}'">Add Comment</button>
+        <button onclick="location.href='/like/{{photo[1]}}'">Like</button>
+        <button onclick="location.href='/add_tag/{{photo[1]}}'">Add Tag</button>
     {% endfor %}
     </ul>
 {% endif %}

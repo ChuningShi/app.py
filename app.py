@@ -185,8 +185,10 @@ def add_friend():
 				<input type='submit' name='submit'></input>
 			   </form></br>
 				<h2> Friend Recommendations: </h2>
-				<form action='friend_recommend' method='POST'>
+				<form action='friend_recommendation' method='POST'>
 				<input type='submit' name='submit'></input>
+							   </form></br>
+			<button onclick="history.back()">Go Back</button>
 		   <a href='/'>Home</a>
 			   '''
 	#The request method is POST (page is recieving data)
@@ -196,7 +198,7 @@ def add_friend():
 	if cursor.execute("SELECT user_id FROM Users WHERE user_id = '{0}'".format(friendID)):
 		cursor.execute("INSERT INTO Friendship (UID1, UID2) VALUES ('{0}', '{1}')".format(uid, friendID))
 		conn.commit()
-		return "You are now friends with {0}".format(friendID)
+		return "You are now friends with: {0}".format(friendID)
 	else:
 		return "No user with ID {0} found".format(friendID)
 
@@ -313,6 +315,7 @@ def album():
 			   				<input type='text' name='viewName' id='viewName' placeholder='album name'></input>
 			   								<input type='submit' name='submit'></input>
 			   </form></br>
+			   <button onclick="history.back()">Go Back</button>
 		   <a href='/'>Home</a>
 			   '''
 	#The request method is POST (page is recieving data)
@@ -378,6 +381,34 @@ def upload_file():
 		return render_template('upload.html')
 #end photo uploading code
 
+@app.route('/delete/<photo_id>')
+def delete_photo(photo_id):
+	cursor = conn.cursor()
+	cursor.execute("DELETE FROM Pictures WHERE picture_id = '{0}'".format(photo_id))
+	conn.commit()
+	return render_template('hello.html', message='Deleted successfully!')
+
+@app.route('/add_comment/<photo_id>')
+def add_comment(photo_id):
+	cursor = conn.cursor()
+	cursor.execute("SELECT imgdata, picture_id, caption FROM Pictures WHERE picture_id = '{0}'".format(photo_id))
+	photo = cursor.fetchall()
+	return render_template('comment.html', photos=photo, base64=base64)
+
+@app.route('/like/<photo_id>')
+def like_photo(photo_id):
+	cursor = conn.cursor()
+	cursor.execute("SELECT imgdata, picture_id, caption FROM Pictures WHERE picture_id = '{0}'".format(photo_id))
+	photo = cursor.fetchall()
+	return render_template('hello.html', photos=photo, base64=base64)
+
+@app.route('/add_tag/<photo_id>')
+def add_tag(photo_id):
+	cursor = conn.cursor()
+	cursor.execute("SELECT imgdata, picture_id, caption FROM Pictures WHERE picture_id = '{0}'".format(photo_id))
+	photo = cursor.fetchall()
+	return render_template('tag.html', photos=photo, base64=base64)
+
 # ------------------- tag ------------------- #
 
 @app.route('/tag', methods=['GET', 'POST'])
@@ -392,7 +423,9 @@ def tag():
 		return ''' <form action="" method="post" enctype="multipart/form-data">
 		<input type="text" name="tag" placeholder="tag">
 		<input type="submit" value="Submit">
-		</form> '''
+		</form> 
+		<button onclick="history.back()">Go Back</button>
+		'''
 
 @app.route('/tag_all', methods=['GET', 'POST'])
 def tag_all():
@@ -440,6 +473,42 @@ def tag_search():
 		return render_template('hello.html', photos=photo, base64=base64)
 	else:
 		return render_template('tag_search.html')
+
+# ------------------- comment ------------------- #
+@app.route('/comment', methods=['GET', 'POST'])
+def comment():
+	if request.method == 'POST':
+		comment = request.form.get('comment')
+		picture_id = request.form.get('picture_id')
+		cursor = conn.cursor()
+		cursor.execute('''INSERT INTO Comments (comment, picture_id) VALUES (%s, %s)''', (comment, picture_id))
+		conn.commit()
+		return render_template('hello.html', message='Comment added!')
+	else:
+		return ''' <form action="" method="post" enctype="multipart/form-data">
+		<input type="text" name="comment" placeholder="comment">
+		<input type="text" name="picture_id" placeholder="picture_id">
+		<input type="submit" value="Submit">
+		</form> 
+		<button onclick="history.back()">Go Back</button>
+		'''
+
+# ------------------- like ------------------- #
+@app.route('/like', methods=['GET', 'POST'])
+def like():
+	if request.method == 'POST':
+		picture_id = request.form.get('picture_id')
+		cursor = conn.cursor()
+		cursor.execute('''INSERT INTO Likes (picture_id) VALUES (%s)''', (picture_id))
+		conn.commit()
+		return render_template('hello.html', message='Liked!')
+	else:
+		return ''' <form action="" method="post" enctype="multipart/form-data">
+		<input type="text" name="picture_id" placeholder="picture_id">
+		<input type="submit" value="Submit">
+		</form> 
+		<button onclick="history.back()">Go Back</button>
+		'''
 
 #default page
 @app.route("/", methods=['GET'])

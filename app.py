@@ -158,6 +158,11 @@ def getAlbumIDfromName(name):
 	cursor.execute("SELECT album_id FROM Albums WHERE Name = '{0}'".format(name))
 	return cursor.fetchone()[0]
 
+def getUserNameFromID(uid):
+	cursor = conn.cursor()
+	cursor.execute("SELECT fname, lname FROM Users WHERE user_id = '{0}'".format(uid))
+	return cursor.fetchone()
+
 # --------------------- FRIEND --------------------- #
 
 @app.route('/friend', methods=['GET', 'POST'])
@@ -198,7 +203,6 @@ def add_friend():
 @app.route('/friend_search', methods=['POST'])
 @flask_login.login_required
 def search_friend():
-	print('get')
 	friendID = flask.request.form['friendID']
 	cursor = conn.cursor()
 	uid = getUserIdFromEmail(flask_login.current_user.id)
@@ -214,6 +218,8 @@ def list_friend():
 	cursor = conn.cursor()
 	cursor.execute("SELECT UID2 FROM Friendship WHERE UID1 = '{0}' OR UID2 = '{0}'".format(uid))
 	data = cursor.fetchall()
+	data= [x[0] for x in data]
+	data= ', '.join(data)
 	return "You are friends with {0}".format(data)
 
 @app.route('/friend_recommendation', methods=['GET', 'POST'])
@@ -221,26 +227,39 @@ def list_friend():
 def friend_recommendation():
 	uid = getUserIdFromEmail(flask_login.current_user.id)
 	cursor = conn.cursor()
+
+	# BUG -- should select uid1 or uid2, not only uid2
 	cursor.execute("SELECT UID2 FROM Friendship WHERE UID1 = '{0}' OR UID2 = '{0}'".format(uid))
+
 	data = cursor.fetchall()
-	friends = []
+	friends = [] # list of user's friends
 	for friend in data:
 		friends.append(friend[0])
 	print(friends)
-	recommendations = {}
+
+	recommendations = {} # dictionary of {uid: count}
 	for friend in friends:
+
+		# BUG -- should select uid1 or uid2, not only uid2
 		cursor.execute("SELECT UID2 FROM Friendship WHERE UID1 = '{0}' OR UID2 = '{0}'".format(friend))
 		data = cursor.fetchall()
 		for friend2 in data:
+			if friend2[0] == uid:
+				continue
 			if friend2[0] not in friends:
 				if friend2[0] not in recommendations:
 					recommendations[friend2[0]] = 1
 				else:
 					recommendations[friend2[0]] += 1
+
 	print(recommendations)
 	sorted_recommendations = sorted(recommendations.items(), key=lambda x: x[1], reverse=True)
 	print(sorted_recommendations)
-	return "You should be friends with {0}".format(sorted_recommendations)
+	sorted_recommendations = [getUserNameFromID(x) for x in sorted_recommendations]
+
+	output= ", ".join(sorted_recommendations)
+
+	return "You should be friends with {0}".format(output)
 
 # ------------------- PHOTO ------------------- #
 def photo_count(email):

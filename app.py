@@ -254,7 +254,7 @@ def list_album():
 def view_album():
 	aid = flask.request.form['viewName']
 	photo = getAlbumsPhotos(getAlbumIDfromName(aid))
-	return render_template('hello.html', name=flask_login.current_user.id, photos=photo, base64=base64)
+	return render_template('hello.html', photos=photo, base64=base64)
 
 # delete album
 @app.route('/album_delete', methods=['POST'])

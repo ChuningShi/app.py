@@ -128,6 +128,38 @@ def register_user():
 		print("couldn't find all tokens")
 		return flask.redirect(flask.url_for('register'))
 
+# ------------------- HELPER -------------------
+def getUsersPhotos(uid):
+	cursor = conn.cursor()
+	cursor.execute("SELECT imgdata, picture_id, caption FROM Pictures WHERE user_id = '{0}'".format(uid))
+	return cursor.fetchall() #NOTE return a list of tuples, [(imgdata, pid, caption), ...]
+
+def getAlbumsPhotos(aid):
+	cursor = conn.cursor()
+	cursor.execute("SELECT imgdata, picture_id, caption FROM Pictures WHERE album_id = '{0}'".format(aid))
+	return cursor.fetchall() #NOTE return a list of tuples, [(imgdata, pid, caption), ...]
+
+def getUserIdFromEmail(email):
+	cursor = conn.cursor()
+	cursor.execute("SELECT user_id  FROM Users WHERE email = '{0}'".format(email))
+	return cursor.fetchone()[0]
+
+def isEmailUnique(email):
+	#use this to check if a email has already been registered
+	cursor = conn.cursor()
+	if cursor.execute("SELECT email  FROM Users WHERE email = '{0}'".format(email)):
+		#this means there are greater than zero entries with that email
+		return False
+	else:
+		return True
+
+def getAlbumIDfromName(name):
+	cursor = conn.cursor()
+	cursor.execute("SELECT album_id FROM Albums WHERE Name = '{0}'".format(name))
+	return cursor.fetchone()[0]
+
+# --------------------- FRIEND --------------------- #
+
 @app.route('/friend', methods=['GET', 'POST'])
 @flask_login.login_required
 def add_friend():
@@ -147,6 +179,9 @@ def add_friend():
 			   <form action='friend_list' method='POST'>
 				<input type='submit' name='submit'></input>
 			   </form></br>
+				<h2> Friend Recommendations: </h2>
+				<form action='friend_recommend' method='POST'>
+				<input type='submit' name='submit'></input>
 		   <a href='/'>Home</a>
 			   '''
 	#The request method is POST (page is recieving data)
@@ -181,7 +216,33 @@ def list_friend():
 	data = cursor.fetchall()
 	return "You are friends with {0}".format(data)
 
+@app.route('/friend_recommendation', methods=['GET', 'POST'])
+@flask_login.login_required
+def friend_recommendation():
+	uid = getUserIdFromEmail(flask_login.current_user.id)
+	cursor = conn.cursor()
+	cursor.execute("SELECT UID2 FROM Friendship WHERE UID1 = '{0}' OR UID2 = '{0}'".format(uid))
+	data = cursor.fetchall()
+	friends = []
+	for friend in data:
+		friends.append(friend[0])
+	print(friends)
+	recommendations = {}
+	for friend in friends:
+		cursor.execute("SELECT UID2 FROM Friendship WHERE UID1 = '{0}' OR UID2 = '{0}'".format(friend))
+		data = cursor.fetchall()
+		for friend2 in data:
+			if friend2[0] not in friends:
+				if friend2[0] not in recommendations:
+					recommendations[friend2[0]] = 1
+				else:
+					recommendations[friend2[0]] += 1
+	print(recommendations)
+	sorted_recommendations = sorted(recommendations.items(), key=lambda x: x[1], reverse=True)
+	print(sorted_recommendations)
+	return "You should be friends with {0}".format(sorted_recommendations)
 
+# ------------------- PHOTO ------------------- #
 def photo_count(email):
 	cursor = conn.cursor()
 	cursor.execute("SELECT COUNT(*) FROM Pictures WHERE email = '{0}'".format(email))
@@ -248,6 +309,8 @@ def list_album():
 	cursor = conn.cursor()
 	cursor.execute("SELECT Name FROM Albums")
 	data = cursor.fetchall()
+	data=[x[0] for x in data]
+	data=", ".join(data)
 	return "You have the following albums: {0}".format(data)
 
 @app.route('/album_view', methods=['POST'])
@@ -265,35 +328,7 @@ def delete_album():
 	conn.commit()
 	return "Album {0} deleted".format(albumName)
 
-def getUsersPhotos(uid):
-	cursor = conn.cursor()
-	cursor.execute("SELECT imgdata, picture_id, caption FROM Pictures WHERE user_id = '{0}'".format(uid))
-	return cursor.fetchall() #NOTE return a list of tuples, [(imgdata, pid, caption), ...]
 
-def getAlbumsPhotos(aid):
-	cursor = conn.cursor()
-	cursor.execute("SELECT imgdata, picture_id, caption FROM Pictures WHERE album_id = '{0}'".format(aid))
-	return cursor.fetchall() #NOTE return a list of tuples, [(imgdata, pid, caption), ...]
-
-def getUserIdFromEmail(email):
-	cursor = conn.cursor()
-	cursor.execute("SELECT user_id  FROM Users WHERE email = '{0}'".format(email))
-	return cursor.fetchone()[0]
-
-def isEmailUnique(email):
-	#use this to check if a email has already been registered
-	cursor = conn.cursor()
-	if cursor.execute("SELECT email  FROM Users WHERE email = '{0}'".format(email)):
-		#this means there are greater than zero entries with that email
-		return False
-	else:
-		return True
-#end login code
-
-def getAlbumIDfromName(name):
-	cursor = conn.cursor()
-	cursor.execute("SELECT album_id FROM Albums WHERE Name = '{0}'".format(name))
-	return cursor.fetchone()[0]
 
 @app.route('/profile')
 @flask_login.login_required
@@ -323,6 +358,8 @@ def upload_file():
 	else:
 		return render_template('upload.html')
 #end photo uploading code
+
+# ------------------- tag ------------------- #
 
 @app.route('/tag', methods=['GET', 'POST'])
 def tag():

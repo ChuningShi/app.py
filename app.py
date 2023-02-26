@@ -392,7 +392,12 @@ def upload_file():
 		photo_data =imgfile.read()
 		cursor = conn.cursor()
 		cursor.execute('''INSERT INTO Pictures (imgdata, user_id, caption, album_id) VALUES (%s, %s, %s, %s )''', (photo_data, uid, caption, album_id))
+		cursor.execute("SELECT LAST_INSERT_ID()")
+		picture_id = cursor.fetchall()[0][0]
 		cursor.execute("INSERT INTO Tags (name) VALUES (%s)", (tag))
+		cursor.execute("SELECT LAST_INSERT_ID()")
+		tag_id = cursor.fetchall()[0][0]
+		cursor.execute("INSERT INTO Tagged(picture_id, tag_id) VALUES (%s, %s)", (picture_id, tag_id))
 		conn.commit()
 		return render_template('hello.html', name=flask_login.current_user.id, message='Photo uploaded!', photos=getUsersPhotos(uid), base64=base64)
 	#The method is GET so we return a  HTML form to upload the a photo.

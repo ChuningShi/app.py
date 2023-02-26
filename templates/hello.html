@@ -10,29 +10,38 @@
 {% if photos %}
 <h2>Here are your photos</h2>
 <ul>
-  {% for photo in photos %}
+    {% for photo in photos %}
 
-  <li>{{photo[2]}}<br>
-    <img src='data:image/jpg;base64, {{ base64.b64encode(photo[0]).decode("ascii") }}' />
-    {{ photo[4] }} people like this photo: {{ photo[3] }}
-  </li>
+    <li>{{photo[2]}}<br>
+        <img src='data:image/jpg;base64, {{ base64.b64encode(photo[0]).decode("ascii") }}'/>
+        {{ photo[4] }} people like this photo: {{ photo[3] }}
+    </li>
 
-  <button onclick="location.href='/delete/{{photo[1]}}'">Delete</button>
-  <button onclick="location.href='/like/{{photo[1]}}'">Like</button>
-  <button onclick="location.href='/add_tag/{{photo[1]}}'">Add Tag</button>
+    <button onclick="location.href='/delete/{{photo[1]}}'">Delete</button>
+    <button onclick="location.href='/like/{{photo[1]}}'">Like</button>
 
-  <div>
-    It has comments: {{ photo[5] }}
-    <form method="post" enctype="multipart/form-data" action="/add_comment">
-    <input type="hidden" name="photo_id" value="{{ photo[1] }}" />
-    <label for="comment">Make new comment: </label><br />
-    <input type="text" name="comment" required='true' />
-    <input type="submit" value="Submit" />
-</form>
-</div>
-  
+    <div>
+        Tags: {{ photo[6] }}
+        <form method="post" enctype="multipart/form-data" action="/add_tag">
+            <input type="hidden" name="photo_id" value="{{ photo[1] }}"/>
+            <label for="tag">Add new tag: </label><br/>
+            <input type="text" name="tag" required='true'/>
+            <input type="submit" value="Submit"/>
+        </form>
+    </div>
 
-  {% endfor %}
+    <div>
+        It has comments: {{ photo[5] }}
+        <form method="post" enctype="multipart/form-data" action="/add_comment">
+            <input type="hidden" name="photo_id" value="{{ photo[1] }}"/>
+            <label for="comment">Make new comment: </label><br/>
+            <input type="text" name="comment" required='true'/>
+            <input type="submit" value="Submit"/>
+        </form>
+    </div>
+
+
+    {% endfor %}
 </ul>
 {% endif %}
 
@@ -43,10 +52,11 @@
 {% endif %}
 
 <ul>
-  <li><a href='/upload'>Upload a photo</a> </li>
-  <li><a href='/friend'>Manage friends</a> </li>
-  <li><a href='/album'>Album</a></li>
-  <li><a href='/tag'>Tags</a></li>
-  <li><a href='/logout'>Logout</a></li>
-  <li><a href='/top_users'>Top 10 users</a></li>
+    <li><a href='/upload'>Upload a photo</a></li>
+    <li><a href='/friend'>Manage friends</a></li>
+    <li><a href='/album'>Album</a></li>
+    <li><a href='/tag'>Tags</a></li>
+    <li><a href='/logout'>Logout</a></li>
+    <li><a href='/top_users'>Top 10 users</a></li>
+    <li><a href='/YMAL'>You may also like...</a></li>
 </ul>

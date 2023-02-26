@@ -12,7 +12,7 @@ app.secret_key = 'super secret string'  # Change this!
 
 #These will need to be changed according to your creditionals
 app.config['MYSQL_DATABASE_USER'] = 'root'
-app.config['MYSQL_DATABASE_PASSWORD'] = 'SCning149192'
+app.config['MYSQL_DATABASE_PASSWORD'] = '081828'
 app.config['MYSQL_DATABASE_DB'] = 'photoshare'
 app.config['MYSQL_DATABASE_HOST'] = 'localhost'
 mysql.init_app(app)
@@ -154,9 +154,15 @@ def getAlbumsPhotos(aid):
 		cursor3 = conn.cursor()
 		cursor3.execute("SELECT user_id, text, date FROM Comments WHERE picture_id = '{0}'".format(i[1]))
 
-		ret.append((i[0],i[1],i[2], like, like_count, cursor3.fetchall()))
+		# get tags
+		cursor4 = conn.cursor()
+		cursor4.execute("SELECT Tags.name FROM Tags\
+						JOIN Tagged ON Tags.tag_id = Tagged.tag_id \
+						WHERE Tagged.picture_id = '{0}'".format(i[1]))
 
-	return ret #NOTE return a list of tuples, [(imgdata, pid, caption, like, like_count), ...]
+		ret.append((i[0],i[1],i[2], like, like_count, cursor3.fetchall(), cursor4.fetchall()))
+
+	return ret #NOTE return a list of tuples, [(imgdata, pid, caption, like, like_count, comments, tags), ...]
 
 def getUserIdFromEmail(email):
 	cursor = conn.cursor()
@@ -247,8 +253,10 @@ def list_friend():
 @flask_login.login_required
 def friend_recommendation():
 	uid = getUserIdFromEmail(flask_login.current_user.id)
-	cursor = conn.cursor()
+	recommendations = {}  # dictionary of {uid: count}
 
+	# First, get all friends
+	cursor = conn.cursor()
 	# BUG -- should select uid1 or uid2, not only uid2
 	cursor.execute("SELECT UID2 FROM Friendship WHERE UID1 = '{0}' OR UID2 = '{0}'".format(uid))
 
@@ -256,31 +264,24 @@ def friend_recommendation():
 	friends = [] # list of user's friends
 	for friend in data:
 		friends.append(friend[0])
-	print(friends)
 
-	recommendations = {} # dictionary of {uid: count}
+	# Then find friends of friends
 	for friend in friends:
-
 		# BUG -- should select uid1 or uid2, not only uid2
 		cursor.execute("SELECT UID2 FROM Friendship WHERE UID1 = '{0}' OR UID2 = '{0}'".format(friend))
 		data = cursor.fetchall()
 		for friend2 in data:
 			if friend2[0] == uid:
 				continue
-			if friend2[0] not in friends:
+			if friend2[0] not in friends: # add to dict
 				if friend2[0] not in recommendations:
 					recommendations[friend2[0]] = 1
 				else:
 					recommendations[friend2[0]] += 1
 
-	# print(recommendations)
 	sorted_recommendations = sorted(recommendations.items(), key=lambda x: x[1], reverse=True)
-	# print(sorted_recommendations)
-	sorted_recommendations = [getUserNameFromID(x) for x in sorted_recommendations]
 
-	output= ", ".join(sorted_recommendations)
-
-	return "You should be friends with {0}".format(output)
+	return "You should be friends with {0}".format([getUserNameFromID(i[0]) for i in sorted_recommendations])
 
 # ------------------- PHOTO ------------------- #
 def photo_count(email):
@@ -394,7 +395,7 @@ def upload_file():
 		cursor.execute('''INSERT INTO Pictures (imgdata, user_id, caption, album_id) VALUES (%s, %s, %s, %s )''', (photo_data, uid, caption, album_id))
 		cursor.execute("SELECT LAST_INSERT_ID()")
 		picture_id = cursor.fetchall()[0][0]
-		cursor.execute("INSERT INTO Tags (name) VALUES (%s)", (tag))
+		cursor.execute("INSERT INTO Tags (name) VALUES (%s)", tag)
 		cursor.execute("SELECT LAST_INSERT_ID()")
 		tag_id = cursor.fetchall()[0][0]
 		cursor.execute("INSERT INTO Tagged(picture_id, tag_id) VALUES (%s, %s)", (picture_id, tag_id))
@@ -414,75 +415,59 @@ def delete_photo(photo_id):
 
 # ------------------- tag ------------------- #
 
-@app.route('/tag', methods=['GET', 'POST'])
-def tag():
-	if request.method == 'POST':
-		tag = request.form.get('tag')
-		cursor = conn.cursor()
-		cursor.execute("SELECT imgdata, picture_id, caption FROM Pictures WHERE caption = '{0}'".format(tag))
-		photo = cursor.fetchall()
-		return render_template('hello.html', photos=photo, base64=base64)
-	else:
-		return ''' <form action="" method="post" enctype="multipart/form-data">
-		<input type="text" name="tag" placeholder="tag">
-		<input type="submit" value="Submit">
-		</form> 
-		<button onclick="history.back()">Go Back</button>
-		'''
-
-@app.route('/add_tag/<photo_id>')
-def add_tag(photo_id):
+@app.route('/add_tag', methods=['POST'])
+def add_tag():
+	tag = request.form.get('tag')
+	picture_id = request.form.get('photo_id')
 	cursor = conn.cursor()
-	cursor.execute("SELECT imgdata, picture_id, caption FROM Pictures WHERE picture_id = '{0}'".format(photo_id))
-	photo = cursor.fetchall()
-	return render_template('tag.html', photos=photo, base64=base64)
+	cursor.execute("INSERT INTO Tags (name) VALUES (%s)", (tag))
+	cursor.execute("SELECT LAST_INSERT_ID()")
+	tag_id = cursor.fetchall()[0][0]
 
-@app.route('/tag_all', methods=['GET', 'POST'])
+	# insert into tagged
+	cursor.execute("INSERT INTO Tagged(picture_id, tag_id) VALUES (%s, %s)", (picture_id, tag_id))
+	conn.commit()
+	return render_template('hello.html', message='Tagged successfully!')
+
+@app.route('/tag_all', methods=['POST'])
 def tag_all():
-	if request.method == 'POST':
-		tag = request.form.get('tag')
-		cursor = conn.cursor()
-		cursor.execute("SELECT imgdata, picture_id, caption FROM Pictures WHERE caption = '{0}'".format(tag))
-		photo = cursor.fetchall()
-		return render_template('hello.html', photos=photo, base64=base64)
-	else:
-		return render_template('tag_all.html')
+	tag = request.form.get('tag')
+	cursor = conn.cursor()
+	cursor.execute("SELECT imgdata, picture_id, caption FROM Pictures WHERE caption = '{0}'".format(tag))
+	photo = cursor.fetchall()
+	return render_template('hello.html', photos=photo, base64=base64)
 
-@app.route('/tag_popular', methods=['GET', 'POST'])
+@app.route('/tag_popular', methods=['POST'])
 def tag_popular():
-	if request.method == 'POST':
-		tag = request.form.get('tag')
-		cursor = conn.cursor()
+	tag = request.form.get('tag')
+	cursor = conn.cursor()
 
-		# get 3 most popular photos with tag
-		cursor.execute("SELECT Tags.name, COUNT(*) AS tag_count\
-						FROM Tags\
-						JOIN Tagged ON Tags.tag_id = Tagged.tag_id\
-						GROUP BY Tags.name\
-						ORDER BY tag_count DESC\
-						LIMIT 3;\
-						".format(tag))
-		data = cursor.fetchall()
-		return data
+	# get 3 most popular photos with tag
+	cursor.execute("SELECT Tags.name, COUNT(*) AS tag_count\
+					FROM Tags\
+					JOIN Tagged ON Tags.tag_id = Tagged.tag_id\
+					GROUP BY Tags.name\
+					ORDER BY tag_count DESC\
+					LIMIT 3;\
+					".format(tag))
+	data = cursor.fetchall()
+	return data
 
-@app.route('/tag_search', methods=['GET', 'POST'])
+@app.route('/tag_search', methods=['POST'])
 def tag_search():
-	if request.method == 'POST':
-		raw_tag = request.form.get('tag')
-		tag=raw_tag.split(' ')
-		cursor = conn.cursor()
-		cursor.execute("SELECT DISTINCT Pictures.picture_id, Pictures.caption\
-						FROM Pictures\
-						JOIN Tagged ON Pictures.picture_id = Tagged.picture_id\
-						JOIN Tags ON Tagged.tag_id = Tags.tag_id\
-						WHERE Tags.name IN ('{0}')\
-						GROUP BY Pictures.picture_id, Pictures.caption\
-						HAVING COUNT(DISTINCT Tags.name) = 2;\
-						".format(tag))
-		photo = cursor.fetchall()
-		return render_template('hello.html', photos=photo, base64=base64)
-	else:
-		return render_template('tag_search.html')
+	raw_tag = request.form.get('tag')
+	tag=raw_tag.split(' ')
+	cursor = conn.cursor()
+	cursor.execute("SELECT DISTINCT Pictures.picture_id, Pictures.caption\
+					FROM Pictures\
+					JOIN Tagged ON Pictures.picture_id = Tagged.picture_id\
+					JOIN Tags ON Tagged.tag_id = Tags.tag_id\
+					WHERE Tags.name IN ('{0}')\
+					GROUP BY Pictures.picture_id, Pictures.caption\
+					HAVING COUNT(DISTINCT Tags.name) = 2;\
+					".format(tag))
+	photo = cursor.fetchall()
+	return render_template('hello.html', photos=photo, base64=base64)
 
 # ------------------- comment ------------------- #
 @app.route('/add_comment', methods=['POST'])
@@ -529,12 +514,6 @@ def like(photo_id):
 @app.route("/", methods=['GET'])
 def hello():
 	return render_template('hello.html', message='Welecome to Photoshare')
-@app.route("/Browsing_photos")
-def browsing_photo():
-	cursor = conn.cursor()
-	cursor.execute("SELECT * FROM Pictures")
-	photo = cursor.fetchall()
-	return render_template('browsing.html', photos=photo)
 
 if __name__ == "__main__":
 	app.run(port=5000, debug=True)

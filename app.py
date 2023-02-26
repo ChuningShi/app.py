@@ -309,7 +309,7 @@ def user_activity():
 		scores[user[0]] = each_score
 		sort = sorted(scores.items(), key=lambda x: x[1], reverse=True)
 		top_10 = sort[:10]
-	return render_template('top_users.html', users=top_10, scores=scores)
+	return render_template('top_users.html', users=top_10)
 
 @app.route('/album', methods=['GET', 'POST'])
 def album():
@@ -418,22 +418,15 @@ def delete_photo(photo_id):
 def my_tag():
 	cursor = conn.cursor()
 	email = flask_login.current_user.id
-	cursor.execute("SELECT name FROM Tags, Users, Pictures, Tagged WHERE Users.email = email AND ")
-	data = cursor.fetchall()
-	data = [x[0] for x in data]
-	data = ", ".join(data)
-	return render_template('my_tag.html')
+	cursor.execute("SELECT name FROM Tags, Users, Pictures, Tagged WHERE Users.email = email AND Users.user_id = Pictures.user_id AND Pictures.picture_id = Tagged.picture_id AND Tags.tag_id = Tagged.tag_id")
+	tag = cursor.fetchall()
+	tag = [x[0] for x in tag]
+	return render_template('my_tag.html', tag=tag)
 
-@app.route('/tag_all', methods=['GET', 'POST'])
-def tag_all():
-	if request.method == 'POST':
-		tag = request.form.get('tag')
-		cursor = conn.cursor()
-		cursor.execute("SELECT imgdata, picture_id, caption FROM Pictures WHERE caption = '{0}'".format(tag))
-		photo = cursor.fetchall()
-		return render_template('hello.html', photos=photo, base64=base64)
-	else:
-		return render_template('tag_all.html')
+@app.route('my_tag/<tag>')
+def tagged_tag(tag):
+
+	return render_template('show_tag.html',  )
 
 @app.route('/tag_popular', methods=['GET', 'POST'])
 def tag_popular():

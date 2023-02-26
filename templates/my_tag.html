@@ -5,8 +5,13 @@
 <body>
 <h1>My Tag</h1>
 <ul>
-    <li>see all<a href='/all_tag'> tags</a> </li>
+    {% for tag in tag %}
+        <div>
+        <a href="{{ tag }}">see photo tagged with {{ tag }}<a/>
+        </div>
+    {% endfor %}
 </ul>
+<ul><li><a href='/all_tag'>see all tags</a> </li></ul>
 
 
 <button onclick="history.back()">Go Back</button>

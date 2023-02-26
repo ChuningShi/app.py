@@ -1,21 +1,25 @@
 <!DOCTYPE html>
 <html>
 <head>
-	<title>Top 10 Users</title>
+    <title>Top 10 Users</title>
 </head>
 <body>
-	<h1>Top 10 Users</h1>
-	<table>
-		<tr>
-			<th>User Email</th>
-			<th>Contribution Score</th>
-		</tr>
-		{% for user in users %}
-		<tr>
-			<td>{{ user[0] }}</td>
-			<td>{{ user[1] }}</td>
-		</tr>
-		{% endfor %}
-	</table>
+<h1>Top 10 Users</h1>
+<table>
+    <tr>
+        <th>User Email</th>
+        <th>Contribution Score</th>
+    </tr>
+    {% for user in users %}
+    <tr>
+        <td>{{ user[0] }}</td>
+        <td>{{ user[1] }}</td>
+    </tr>
+    {% endfor %}
+</table>
+
+<button onclick="history.back()">Go Back</button>
+
+<a href='/'>Home</a>
 </body>
 </html>

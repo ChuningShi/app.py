@@ -414,28 +414,15 @@ def delete_photo(photo_id):
 
 # ------------------- tag ------------------- #
 
-@app.route('/tag', methods=['GET', 'POST'])
-def tag():
-	if request.method == 'POST':
-		tag = request.form.get('tag')
-		cursor = conn.cursor()
-		cursor.execute("SELECT imgdata, picture_id, caption FROM Pictures WHERE caption = '{0}'".format(tag))
-		photo = cursor.fetchall()
-		return render_template('hello.html', photos=photo, base64=base64)
-	else:
-		return ''' <form action="" method="post" enctype="multipart/form-data">
-		<input type="text" name="tag" placeholder="tag">
-		<input type="submit" value="Submit">
-		</form> 
-		<button onclick="history.back()">Go Back</button>
-		'''
-
-@app.route('/add_tag/<photo_id>')
-def add_tag(photo_id):
+@app.route('/my_tag')
+def my_tag():
 	cursor = conn.cursor()
-	cursor.execute("SELECT imgdata, picture_id, caption FROM Pictures WHERE picture_id = '{0}'".format(photo_id))
-	photo = cursor.fetchall()
-	return render_template('tag.html', photos=photo, base64=base64)
+	email = flask_login.current_user.id
+	cursor.execute("SELECT name FROM Tags, Users, Pictures, Tagged WHERE Users.email = email AND ")
+	data = cursor.fetchall()
+	data = [x[0] for x in data]
+	data = ", ".join(data)
+	return render_template('my_tag.html')
 
 @app.route('/tag_all', methods=['GET', 'POST'])
 def tag_all():

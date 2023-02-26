@@ -5,6 +5,8 @@
 <body>
 <h1>My Tag</h1>
 <ul>
+    <li><a href='/all_tag'>see all tags</a></li>
+    <li><a href='/tag_popular'>popular tags</a></li>
     {% for tag in tag %}
         <div>
         <a href="{{ tag }}">see photo tagged with {{ tag }}<a/>
@@ -13,6 +15,11 @@
 </ul>
 <ul><li><a href='/all_tag'>see all tags</a> </li></ul>
 
+<form method="post" enctype="multipart/form-data" action="/tag_search">
+    <label for="tag">Search photo by tag: </label>
+    <input type="text" name="tag" required='true'/>
+    <input type="submit" value="Submit"/>
+</form>
 
 <button onclick="history.back()">Go Back</button>
 

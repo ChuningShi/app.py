@@ -12,7 +12,7 @@ app.secret_key = 'super secret string'  # Change this!
 
 #These will need to be changed according to your creditionals
 app.config['MYSQL_DATABASE_USER'] = 'root'
-app.config['MYSQL_DATABASE_PASSWORD'] = 'SCning149192'
+app.config['MYSQL_DATABASE_PASSWORD'] = '081828'
 app.config['MYSQL_DATABASE_DB'] = 'photoshare'
 app.config['MYSQL_DATABASE_HOST'] = 'localhost'
 mysql.init_app(app)
@@ -415,6 +415,19 @@ def delete_photo(photo_id):
 	return render_template('hello.html', message='Deleted successfully!')
 
 # ------------------- tag ------------------- #
+@app.route('/my_tag')
+def my_tag():
+	cursor = conn.cursor()
+	email = flask_login.current_user.id
+	cursor.execute("SELECT name FROM Tags, Users, Pictures, Tagged WHERE Users.email = email AND Users.user_id = Pictures.user_id AND Pictures.picture_id = Tagged.picture_id AND Tags.tag_id = Tagged.tag_id")
+	tag = cursor.fetchall()
+	tag = [x[0] for x in tag]
+	return render_template('my_tag.html', tag=tag)
+
+@app.route('my_tag/<tag>')
+def tagged_tag(tag):
+
+	return render_template('show_tag.html',  )
 
 @app.route('/add_tag', methods=['POST'])
 def add_tag():
@@ -438,12 +451,12 @@ def tag_all():
 	photo = cursor.fetchall()
 	return render_template('hello.html', photos=photo, base64=base64)
 
-@app.route('/tag_popular', methods=['POST'])
+@app.route('/tag_popular', methods=['GET'])
 def tag_popular():
 	tag = request.form.get('tag')
 	cursor = conn.cursor()
 
-	# get 3 most popular photos with tag
+	# get 3 most popular tags
 	cursor.execute("SELECT Tags.name, COUNT(*) AS tag_count\
 					FROM Tags\
 					JOIN Tagged ON Tags.tag_id = Tagged.tag_id\
@@ -452,23 +465,29 @@ def tag_popular():
 					LIMIT 3;\
 					".format(tag))
 	data = cursor.fetchall()
-	return data
+	# convert double nested tuples to list
+	return data[0][0]+', '+data[1][0]+', '+data[2][0]
 
 @app.route('/tag_search', methods=['POST'])
 def tag_search():
 	raw_tag = request.form.get('tag')
-	tag=raw_tag.split(' ')
+	tag=raw_tag.strip().split()
+
+	# Construct the SQL query imgdata, picture_id, caption
+	query = 'SELECT p.imgdata, p.picture_id, p.caption FROM Pictures p\
+	 JOIN Tagged t ON p.picture_id = t.picture_id JOIN Tags g ON t.tag_id = g.tag_id WHERE '
+	for i in tag:
+		query += 'g.name LIKE "%{}%" AND '.format(i)
+	query = query[:-5] + ';'
+
+	# Execute the query
+	conn = mysql.connect()
 	cursor = conn.cursor()
-	cursor.execute("SELECT DISTINCT Pictures.picture_id, Pictures.caption\
-					FROM Pictures\
-					JOIN Tagged ON Pictures.picture_id = Tagged.picture_id\
-					JOIN Tags ON Tagged.tag_id = Tags.tag_id\
-					WHERE Tags.name IN ('{0}')\
-					GROUP BY Pictures.picture_id, Pictures.caption\
-					HAVING COUNT(DISTINCT Tags.name) = 2;\
-					".format(tag))
+	cursor.execute(query)
+
 	photo = cursor.fetchall()
-	return render_template('hello.html', photos=photo, base64=base64)
+	print(photo)
+	return render_template('hello.html', photos=photo, base64=base64, message='Search results for: '+raw_tag)
 
 # ------------------- comment ------------------- #
 @app.route('/add_comment', methods=['POST'])

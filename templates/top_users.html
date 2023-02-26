@@ -7,13 +7,11 @@
 	<h1>Top 10 Users</h1>
 	<table>
 		<tr>
-			<th>Rank</th>
 			<th>User Email</th>
 			<th>Contribution Score</th>
 		</tr>
-		{% for rank, user in top_users %}
+		{% for user in users %}
 		<tr>
-			<td>{{ rank }}</td>
 			<td>{{ user[0] }}</td>
 			<td>{{ user[1] }}</td>
 		</tr>

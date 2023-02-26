@@ -12,7 +12,7 @@ app.secret_key = 'super secret string'  # Change this!
 
 #These will need to be changed according to your creditionals
 app.config['MYSQL_DATABASE_USER'] = 'root'
-app.config['MYSQL_DATABASE_PASSWORD'] = '081828'
+app.config['MYSQL_DATABASE_PASSWORD'] = 'SCning149192'
 app.config['MYSQL_DATABASE_DB'] = 'photoshare'
 app.config['MYSQL_DATABASE_HOST'] = 'localhost'
 mysql.init_app(app)
@@ -128,62 +128,6 @@ def register_user():
 		print("couldn't find all tokens")
 		return flask.redirect(flask.url_for('register'))
 
-# ------------------- HELPER -------------------
-def getUsersPhotos(uid):
-	cursor = conn.cursor()
-	cursor.execute("SELECT imgdata, picture_id, caption FROM Pictures WHERE user_id = '{0}'".format(uid))
-	return cursor.fetchall() #NOTE return a list of tuples, [(imgdata, pid, caption), ...]
-
-def getAlbumsPhotos(aid):
-	cursor = conn.cursor()
-	cursor.execute("SELECT imgdata, picture_id, caption FROM Pictures WHERE album_id = '{0}'".format(aid))
-	data=cursor.fetchall()
-	ret=[]
-	# add count of likes for each photo
-	for i in data:
-		cursor1 = conn.cursor()
-		cursor1.execute("SELECT user_id FROM Likes WHERE picture_id = '{0}'".format(i[1]))
-		like = cursor1.fetchall()
-		like = ', '.join([str(i[0]) for i in like])
-
-		cursor2 = conn.cursor()
-		cursor2.execute("SELECT COUNT(*) FROM Likes WHERE picture_id = '{0}'".format(i[1]))
-		like_count = cursor2.fetchone()[0]
-
-		# get comment
-		cursor3 = conn.cursor()
-		cursor3.execute("SELECT user_id, text, date FROM Comments WHERE picture_id = '{0}'".format(i[1]))
-
-		ret.append((i[0],i[1],i[2], like, like_count, cursor3.fetchall()))
-
-	return ret #NOTE return a list of tuples, [(imgdata, pid, caption, like, like_count), ...]
-
-def getUserIdFromEmail(email):
-	cursor = conn.cursor()
-	cursor.execute("SELECT user_id  FROM Users WHERE email = '{0}'".format(email))
-	return cursor.fetchone()[0]
-
-def isEmailUnique(email):
-	#use this to check if a email has already been registered
-	cursor = conn.cursor()
-	if cursor.execute("SELECT email  FROM Users WHERE email = '{0}'".format(email)):
-		#this means there are greater than zero entries with that email
-		return False
-	else:
-		return True
-
-def getAlbumIDfromName(name):
-	cursor = conn.cursor()
-	cursor.execute("SELECT album_id FROM Albums WHERE Name = '{0}'".format(name))
-	return cursor.fetchone()[0]
-
-def getUserNameFromID(uid):
-	cursor = conn.cursor()
-	cursor.execute("SELECT fname, lname FROM Users WHERE user_id = '{0}'".format(uid))
-	return cursor.fetchone()
-
-# --------------------- FRIEND --------------------- #
-
 @app.route('/friend', methods=['GET', 'POST'])
 @flask_login.login_required
 def add_friend():
@@ -203,11 +147,6 @@ def add_friend():
 			   <form action='friend_list' method='POST'>
 				<input type='submit' name='submit'></input>
 			   </form></br>
-				<h2> Friend Recommendations: </h2>
-				<form action='friend_recommendation' method='POST'>
-				<input type='submit' name='submit'></input>
-							   </form></br>
-			<button onclick="history.back()">Go Back</button>
 		   <a href='/'>Home</a>
 			   '''
 	#The request method is POST (page is recieving data)
@@ -217,13 +156,14 @@ def add_friend():
 	if cursor.execute("SELECT user_id FROM Users WHERE user_id = '{0}'".format(friendID)):
 		cursor.execute("INSERT INTO Friendship (UID1, UID2) VALUES ('{0}', '{1}')".format(uid, friendID))
 		conn.commit()
-		return "You are now friends with: {0}".format(friendID)
+		return "You are now friends with {0}".format(friendID)
 	else:
 		return "No user with ID {0} found".format(friendID)
 
 @app.route('/friend_search', methods=['POST'])
 @flask_login.login_required
 def search_friend():
+	print('get')
 	friendID = flask.request.form['friendID']
 	cursor = conn.cursor()
 	uid = getUserIdFromEmail(flask_login.current_user.id)
@@ -239,65 +179,25 @@ def list_friend():
 	cursor = conn.cursor()
 	cursor.execute("SELECT UID2 FROM Friendship WHERE UID1 = '{0}' OR UID2 = '{0}'".format(uid))
 	data = cursor.fetchall()
-	# data= [x[0] for x in data]
-	# data= ', '.join(data)
 	return "You are friends with {0}".format(data)
 
-@app.route('/friend_recommendation', methods=['GET', 'POST'])
-@flask_login.login_required
-def friend_recommendation():
-	uid = getUserIdFromEmail(flask_login.current_user.id)
-	cursor = conn.cursor()
 
-	# BUG -- should select uid1 or uid2, not only uid2
-	cursor.execute("SELECT UID2 FROM Friendship WHERE UID1 = '{0}' OR UID2 = '{0}'".format(uid))
-
-	data = cursor.fetchall()
-	friends = [] # list of user's friends
-	for friend in data:
-		friends.append(friend[0])
-	print(friends)
-
-	recommendations = {} # dictionary of {uid: count}
-	for friend in friends:
-
-		# BUG -- should select uid1 or uid2, not only uid2
-		cursor.execute("SELECT UID2 FROM Friendship WHERE UID1 = '{0}' OR UID2 = '{0}'".format(friend))
-		data = cursor.fetchall()
-		for friend2 in data:
-			if friend2[0] == uid:
-				continue
-			if friend2[0] not in friends:
-				if friend2[0] not in recommendations:
-					recommendations[friend2[0]] = 1
-				else:
-					recommendations[friend2[0]] += 1
-
-	print(recommendations)
-	sorted_recommendations = sorted(recommendations.items(), key=lambda x: x[1], reverse=True)
-	print(sorted_recommendations)
-	sorted_recommendations = [getUserNameFromID(x) for x in sorted_recommendations]
-
-	output= ", ".join(sorted_recommendations)
-
-	return "You should be friends with {0}".format(output)
-
-# ------------------- PHOTO ------------------- #
 def photo_count(email):
 	cursor = conn.cursor()
-	cursor.execute("SELECT COUNT(*) FROM Pictures WHERE email = '{0}'".format(email))
+	cursor.execute("SELECT COUNT(*) FROM Pictures P, Users U WHERE U.email = '{0}' AND P.user_id = U.user_id".format(email))
+	# INSERT INTO Friendship (UID1, UID2) VALUES ('{0}', '{1}')".format(uid, friendID))
 	count = cursor.fetchall()
 	count = count[0][0]
 	return count
 
 def comment_count(email):
 	cursor = conn.cursor()
-	cursor.execute("SELECT COUNT(*) FROM Comments WHERE email = '{0}'".format(email))
+	cursor.execute("SELECT COUNT(*) FROM Comments C, Users U WHERE U.email = '{0}' AND C.user_id = U.user_id".format(email))
 	count = cursor.fetchall()
 	count = count[0][0]
 	return count
 
-@app.route('/top_10_users')
+@app.route('/top_users')
 def user_activity():
 	cursor = conn.cursor()
 	cursor.execute("SELECT email FROM Users")
@@ -309,7 +209,7 @@ def user_activity():
 		scores[user[0]] = each_score
 		sort = sorted(scores.items(), key=lambda x: x[1], reverse=True)
 		top_10 = sort[:10]
-		return render_template('top_users.html', users=top_10)
+		return render_template('top_users.html', users=top_10, scores=scores)
 
 @app.route('/album', methods=['GET', 'POST'])
 def album():
@@ -334,7 +234,6 @@ def album():
 			   				<input type='text' name='viewName' id='viewName' placeholder='album name'></input>
 			   								<input type='submit' name='submit'></input>
 			   </form></br>
-			   <button onclick="history.back()">Go Back</button>
 		   <a href='/'>Home</a>
 			   '''
 	#The request method is POST (page is recieving data)
@@ -350,8 +249,6 @@ def list_album():
 	cursor = conn.cursor()
 	cursor.execute("SELECT Name FROM Albums")
 	data = cursor.fetchall()
-	data=[x[0] for x in data]
-	data=", ".join(data)
 	return "You have the following albums: {0}".format(data)
 
 @app.route('/album_view', methods=['POST'])
@@ -368,6 +265,36 @@ def delete_album():
 	cursor.execute("DELETE FROM Albums WHERE Name = '{0}'".format(albumName))
 	conn.commit()
 	return "Album {0} deleted".format(albumName)
+
+def getUsersPhotos(uid):
+	cursor = conn.cursor()
+	cursor.execute("SELECT imgdata, picture_id, caption FROM Pictures WHERE user_id = '{0}'".format(uid))
+	return cursor.fetchall() #NOTE return a list of tuples, [(imgdata, pid, caption), ...]
+
+def getAlbumsPhotos(aid):
+	cursor = conn.cursor()
+	cursor.execute("SELECT imgdata, picture_id, caption FROM Pictures WHERE album_id = '{0}'".format(aid))
+	return cursor.fetchall() #NOTE return a list of tuples, [(imgdata, pid, caption), ...]
+
+def getUserIdFromEmail(email):
+	cursor = conn.cursor()
+	cursor.execute("SELECT user_id  FROM Users WHERE email = '{0}'".format(email))
+	return cursor.fetchone()[0]
+
+def isEmailUnique(email):
+	#use this to check if a email has already been registered
+	cursor = conn.cursor()
+	if cursor.execute("SELECT email  FROM Users WHERE email = '{0}'".format(email)):
+		#this means there are greater than zero entries with that email
+		return False
+	else:
+		return True
+#end login code
+
+def getAlbumIDfromName(name):
+	cursor = conn.cursor()
+	cursor.execute("SELECT album_id FROM Albums WHERE Name = '{0}'".format(name))
+	return cursor.fetchone()[0]
 
 @app.route('/profile')
 @flask_login.login_required
@@ -398,123 +325,18 @@ def upload_file():
 		return render_template('upload.html')
 #end photo uploading code
 
-@app.route('/delete/<photo_id>')
-def delete_photo(photo_id):
-	cursor = conn.cursor()
-	cursor.execute("DELETE FROM Pictures WHERE picture_id = '{0}'".format(photo_id))
-	conn.commit()
-	return render_template('hello.html', message='Deleted successfully!')
 
-# ------------------- tag ------------------- #
-
-@app.route('/tag', methods=['GET', 'POST'])
-def tag():
-	if request.method == 'POST':
-		tag = request.form.get('tag')
-		cursor = conn.cursor()
-		cursor.execute("SELECT imgdata, picture_id, caption FROM Pictures WHERE caption = '{0}'".format(tag))
-		photo = cursor.fetchall()
-		return render_template('hello.html', photos=photo, base64=base64)
-	else:
-		return ''' <form action="" method="post" enctype="multipart/form-data">
-		<input type="text" name="tag" placeholder="tag">
-		<input type="submit" value="Submit">
-		</form> 
-		<button onclick="history.back()">Go Back</button>
-		'''
-
-@app.route('/add_tag/<photo_id>')
-def add_tag(photo_id):
-	cursor = conn.cursor()
-	cursor.execute("SELECT imgdata, picture_id, caption FROM Pictures WHERE picture_id = '{0}'".format(photo_id))
-	photo = cursor.fetchall()
-	return render_template('tag.html', photos=photo, base64=base64)
-
-@app.route('/tag_all', methods=['GET', 'POST'])
-def tag_all():
-	if request.method == 'POST':
-		tag = request.form.get('tag')
-		cursor = conn.cursor()
-		cursor.execute("SELECT imgdata, picture_id, caption FROM Pictures WHERE caption = '{0}'".format(tag))
-		photo = cursor.fetchall()
-		return render_template('hello.html', photos=photo, base64=base64)
-	else:
-		return render_template('tag_all.html')
-
-@app.route('/tag_popular', methods=['GET', 'POST'])
-def tag_popular():
-	if request.method == 'POST':
-		tag = request.form.get('tag')
-		cursor = conn.cursor()
-
-		# get 3 most popular photos with tag
-		cursor.execute("SELECT Tags.name, COUNT(*) AS tag_count\
-						FROM Tags\
-						JOIN Tagged ON Tags.tag_id = Tagged.tag_id\
-						GROUP BY Tags.name\
-						ORDER BY tag_count DESC\
-						LIMIT 3;\
-						".format(tag))
-		data = cursor.fetchall()
-		return data
-
-@app.route('/tag_search', methods=['GET', 'POST'])
-def tag_search():
-	if request.method == 'POST':
-		raw_tag = request.form.get('tag')
-		tag=raw_tag.split(' ')
-		cursor = conn.cursor()
-		cursor.execute("SELECT DISTINCT Pictures.picture_id, Pictures.caption\
-						FROM Pictures\
-						JOIN Tagged ON Pictures.picture_id = Tagged.picture_id\
-						JOIN Tags ON Tagged.tag_id = Tags.tag_id\
-						WHERE Tags.name IN ('{0}')\
-						GROUP BY Pictures.picture_id, Pictures.caption\
-						HAVING COUNT(DISTINCT Tags.name) = 2;\
-						".format(tag))
-		photo = cursor.fetchall()
-		return render_template('hello.html', photos=photo, base64=base64)
-	else:
-		return render_template('tag_search.html')
-
-# ------------------- comment ------------------- #
-@app.route('/add_comment', methods=['POST'])
-def comment():
-	comment = request.form.get('comment')
-	photo_id = request.form.get('photo_id')
-	try:
-		uid = getUserIdFromEmail(flask_login.current_user.id)
-
-	except:
-		uid=0 # visitor comment? conflict with sql schema
-
-	# Users cannot leave comments on their own photos
-	check = conn.cursor()
-	# BUG- syntax error
-	check.execute("SELECT COUNT(*) FROM Pictures WHERE picture_id = '{0}' AND user_id = '{1}".format(photo_id, uid))
-	count= check.fetchone()
-	if count[0] != 0:
-		return render_template('hello.html', message='You cannot comment on your own photo!')
-
-	cursor = conn.cursor()
-	cursor.execute('''INSERT INTO Comments (text, picture_id, user_id) VALUES (%s, %s, %s)''', (comment, photo_id, uid))
-	conn.commit()
-	return render_template('hello.html', message='Comment added!')
-
-
-# ------------------- like ------------------- #
-@app.route('/like/<photo_id>')
-def like(photo_id):
-	cursor = conn.cursor()
-	uid = getUserIdFromEmail(flask_login.current_user.id)
-	cursor.execute('''INSERT INTO Likes (picture_id, user_id) VALUES (%s, %s)''', (photo_id, uid))
-	conn.commit()
-	return render_template('hello.html', message='Liked!')
 
 #default page
 @app.route("/", methods=['GET'])
 def hello():
-	return render_template('hello.html', message='Welcome to Photoshare')
+	return render_template('hello.html', message='Welecome to Photoshare')
+@app.route("/Browsing_photos")
+def browsing_photo():
+	cursor = conn.cursor()
+	cursor.execute("SELECT * FROM Pictures")
+	photo = cursor.fetchall()
+	return render_template('browsing.html', photos=photo)
 
 if __name__ == "__main__":
 	app.run(port=5000, debug=True)

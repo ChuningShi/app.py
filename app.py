@@ -446,11 +446,14 @@ def add_tag():
 
 @app.route('/tag_all', methods=['POST'])
 def tag_all():
-	tag = request.form.get('tag')
+	tag = request.form.get('tag_name')
 	cursor = conn.cursor()
-	cursor.execute("SELECT imgdata, picture_id, caption FROM Pictures WHERE caption = '{0}'".format(tag))
-	photo = cursor.fetchall()
-	return render_template('hello.html', photos=photo, base64=base64)
+	cursor.execute("SELECT p.imgdata, p.picture_id, p.caption FROM Pictures p\
+	JOIN tagged tgd ON p.picture_id = tgd.picture_id\
+	JOIN tags t ON tgd.tag_id = t.tag_id\
+	WHERE t.name = '{0}'".format(tag))
+	photo = getAllPhotos(cursor.fetchall())
+	return render_template('hello.html', photos=photo, base64=base64, message='Photo with tag {0} shown'.format(tag))
 
 @app.route('/tag_popular', methods=['GET'])
 def tag_popular():

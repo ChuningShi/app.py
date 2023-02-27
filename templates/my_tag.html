@@ -7,8 +7,12 @@
 <ul>
     <li><a href='/all_tag'>see all tags</a></li>
     <li><a href='/tag_popular'>popular tags</a></li>
+
     {% for tag in tag %}
-        <a href="{{ tag }}">see photo tagged with {{ tag }}<a/><br/>
+        <form method="post" enctype="multipart/form-data" action="/tag_all">
+            <input type="hidden" name="tag_name" value="{{ tag }}"/>
+            <a href="#" onclick="this.parentNode.submit();">see photo tagged with {{ tag }}<a/><br/>
+        </form>
     {% endfor %}
 </ul>
 

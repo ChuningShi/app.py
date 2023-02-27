@@ -134,10 +134,7 @@ def getUsersPhotos(uid):
 	cursor.execute("SELECT imgdata, picture_id, caption FROM Pictures WHERE user_id = '{0}'".format(uid))
 	return cursor.fetchall() #NOTE return a list of tuples, [(imgdata, pid, caption), ...]
 
-def getAlbumsPhotos(aid):
-	cursor = conn.cursor()
-	cursor.execute("SELECT imgdata, picture_id, caption FROM Pictures WHERE album_id = '{0}'".format(aid))
-	data=cursor.fetchall()
+def getAllPhotos(data):
 	ret=[]
 	# add count of likes for each photo
 	for i in data:
@@ -358,8 +355,12 @@ def list_album():
 
 @app.route('/album_view', methods=['POST'])
 def view_album():
-	aid = flask.request.form['viewName']
-	photo = getAlbumsPhotos(getAlbumIDfromName(aid))
+	aname = flask.request.form['viewName']
+	aid = getAlbumIDfromName(aname)
+	cursor = conn.cursor()
+	cursor.execute("SELECT imgdata, picture_id, caption FROM Pictures WHERE album_id = '{0}'".format(aid))
+	data = cursor.fetchall()
+	photo = getAllPhotos(data)
 	return render_template('hello.html', photos=photo, base64=base64)
 
 # delete album
@@ -424,10 +425,10 @@ def my_tag():
 	tag = [x[0] for x in tag]
 	return render_template('my_tag.html', tag=tag)
 
-@app.route('my_tag/<tag>')
-def tagged_tag(tag):
-
-	return render_template('show_tag.html',  )
+# @app.route('my_tag/<tag>')
+# def tagged_tag(tag):
+#
+# 	return render_template('show_tag.html',  )
 
 @app.route('/add_tag', methods=['POST'])
 def add_tag():

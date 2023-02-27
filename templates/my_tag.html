@@ -8,12 +8,9 @@
     <li><a href='/all_tag'>see all tags</a></li>
     <li><a href='/tag_popular'>popular tags</a></li>
     {% for tag in tag %}
-        <div>
-        <a href="{{ tag }}">see photo tagged with {{ tag }}<a/>
-        </div>
+        <a href="{{ tag }}">see photo tagged with {{ tag }}<a/><br/>
     {% endfor %}
 </ul>
-<ul><li><a href='/all_tag'>see all tags</a> </li></ul>
 
 <form method="post" enctype="multipart/form-data" action="/tag_search">
     <label for="tag">Search photo by tag: </label>

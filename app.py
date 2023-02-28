@@ -491,23 +491,19 @@ def tag_popular():
 @app.route('/tag_search', methods=['POST'])
 def tag_search():
 	raw_tag = request.form.get('tag')
-	tag=raw_tag.strip().split()
-
-	'''SELECT p.*
-FROM photos p
-INNER JOIN photo_tags pt ON p.id = pt.photo_id
-INNER JOIN tags t ON pt.tag_id = t.id
-WHERE t.name IN ('tag1', 'tag2', 'tag3', ...)
-GROUP BY p.id
-HAVING COUNT(DISTINCT t.id) = <number of tags specified>;
-'''
+	tag=tuple(raw_tag.strip().split())
+	print(tag)
+	count=len(tag)
 	# Construct the SQL query imgdata, picture_id, caption
-	query = 'SELECT p.imgdata, p.picture_id, p.caption FROM Pictures p\
-	 JOIN Tagged t ON p.picture_id = t.picture_id JOIN Tags g ON t.tag_id = g.tag_id WHERE '
-	for i in tag:
-		query += 'g.name LIKE "%{}%" AND '.format(i)
-	query = query[:-5] + ';'
-
+	query = '''SELECT p.imgdata, p.picture_id, p.caption
+				FROM Pictures p
+				INNER JOIN tagged tgd ON p.picture_id = tgd.picture_id
+				INNER JOIN tags t ON tgd.tag_id = t.tag_id
+				WHERE t.name IN {}
+				GROUP BY p.picture_id
+				HAVING COUNT(DISTINCT t.tag_id) = {};
+				'''.format(tag, count)
+	print(query)
 	# Execute the query
 	conn = mysql.connect()
 	cursor = conn.cursor()

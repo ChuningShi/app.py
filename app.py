@@ -420,9 +420,7 @@ def delete_photo(photo_id):
 def my_tag():
 	cursor = conn.cursor()
 	email = flask_login.current_user.id
-	cursor.execute("SELECT DISTINCT name FROM Tags, Users, Pictures, Tagged\ "
-				   "WHERE Users.email = email AND Users.user_id = Pictures.user_id\ "
-				   "AND Pictures.picture_id = Tagged.picture_id AND Tags.tag_id = Tagged.tag_id")
+	cursor.execute("SELECT DISTINCT name FROM Tags, Users, Pictures, Tagged WHERE Users.email = email AND Users.user_id = Pictures.user_id AND Pictures.picture_id = Tagged.picture_id AND Tags.tag_id = Tagged.tag_id")
 	tag = cursor.fetchall()
 	tag = [x[0] for x in tag]
 	return render_template('my_tag.html', tag=tag)
@@ -430,8 +428,7 @@ def my_tag():
 @app.route('/all_tag')
 def all_tag():
 	cursor = conn.cursor()
-	cursor.execute("SELECT DISTINCT name FROM Tags, Pictures, Tagged\ "
-				   "WHERE Pictures.picture_id = Tagged.picture_id AND Tags.tag_id = Tagged.tag_id")
+	cursor.execute("SELECT DISTINCT name FROM Tags, Pictures, Tagged WHERE Pictures.picture_id = Tagged.picture_id AND Tags.tag_id = Tagged.tag_id")
 	tag = cursor.fetchall()
 	tag = [x[0] for x in tag]
 	return render_template('all_tag.html', tag=tag)
@@ -486,6 +483,14 @@ def tag_search():
 	raw_tag = request.form.get('tag')
 	tag=raw_tag.strip().split()
 
+	'''SELECT p.*
+FROM photos p
+INNER JOIN photo_tags pt ON p.id = pt.photo_id
+INNER JOIN tags t ON pt.tag_id = t.id
+WHERE t.name IN ('tag1', 'tag2', 'tag3', ...)
+GROUP BY p.id
+HAVING COUNT(DISTINCT t.id) = <number of tags specified>;
+'''
 	# Construct the SQL query imgdata, picture_id, caption
 	query = 'SELECT p.imgdata, p.picture_id, p.caption FROM Pictures p\
 	 JOIN Tagged t ON p.picture_id = t.picture_id JOIN Tags g ON t.tag_id = g.tag_id WHERE '

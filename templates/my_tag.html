@@ -5,8 +5,6 @@
 <body>
 <h1>My Tag</h1>
 <ul>
-    <li><a href='/all_tag'>see all tags</a></li>
-    <li><a href='/tag_popular'>popular tags</a></li>
 
     {% for tag in tag %}
         <form method="post" enctype="multipart/form-data" action="/tag_all">
@@ -14,6 +12,9 @@
             <a href="#" onclick="this.parentNode.submit();">see photo tagged with {{ tag }}<a/><br/>
         </form>
     {% endfor %}
+
+    <li><a href='/all_tag'>see all tags</a></li>
+    <li><a href='/tag_popular'>popular tags</a></li>
 </ul>
 
 <form method="post" enctype="multipart/form-data" action="/tag_search">

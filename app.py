@@ -12,7 +12,7 @@ app.secret_key = 'super secret string'  # Change this!
 
 #These will need to be changed according to your creditionals
 app.config['MYSQL_DATABASE_USER'] = 'root'
-app.config['MYSQL_DATABASE_PASSWORD'] = '081828'
+app.config['MYSQL_DATABASE_PASSWORD'] = 'SCning149192'
 app.config['MYSQL_DATABASE_DB'] = 'photoshare'
 app.config['MYSQL_DATABASE_HOST'] = 'localhost'
 mysql.init_app(app)
@@ -393,6 +393,8 @@ def upload_file():
 		caption = request.form.get('caption')
 		tag = request.form.get('tag')
 		photo_data =imgfile.read()
+		if canAddPhoto(uid, album_id) == False:
+			return render_template('hello.html', message="You cannot add photo to other's album!")
 		cursor = conn.cursor()
 		cursor.execute('''INSERT INTO Pictures (imgdata, user_id, caption, album_id) VALUES (%s, %s, %s, %s )''', (photo_data, uid, caption, album_id))
 		cursor.execute("SELECT LAST_INSERT_ID()")
@@ -406,6 +408,21 @@ def upload_file():
 	#The method is GET so we return a  HTML form to upload the a photo.
 	else:
 		return render_template('upload.html')
+
+def canAddPhoto(uid, album_id):
+	if album is None:
+		return False
+
+	# Check if the user is the owner of the album
+	cursor = conn.cursor()
+	cursor.execute("SELECT user_id FROM Albums WHERE album_id = album_id")
+	owner = cursor.fetchone()[0]
+	if owner == uid:
+		return True
+
+	# The user is not the owner or a collaborator on the album
+	return False
+
 #end photo uploading code
 
 @app.route('/delete/<photo_id>')
@@ -420,9 +437,11 @@ def delete_photo(photo_id):
 def my_tag():
 	cursor = conn.cursor()
 	email = flask_login.current_user.id
+	print(email)
 	cursor.execute("SELECT DISTINCT name FROM Tags, Users, Pictures, Tagged WHERE Users.email = email AND Users.user_id = Pictures.user_id AND Pictures.picture_id = Tagged.picture_id AND Tags.tag_id = Tagged.tag_id")
 	tag = cursor.fetchall()
 	tag = [x[0] for x in tag]
+	print(tag)
 	return render_template('my_tag.html', tag=tag)
 
 @app.route('/all_tag')
@@ -460,7 +479,6 @@ def tag_all():
 
 @app.route('/tag_popular', methods=['GET'])
 def tag_popular():
-	tag = request.form.get('tag')
 	cursor = conn.cursor()
 
 	# get 3 most popular tags
@@ -470,12 +488,13 @@ def tag_popular():
 					GROUP BY Tags.name\
 					ORDER BY tag_count DESC\
 					LIMIT 3;\
-					".format(tag))
+					")
 	data = cursor.fetchall()
 	# convert double nested tuples to list
 	output=''
+	print("This is the first line.\nThis is the second line.")
 	for i in range(3):
-		output+='#'+str(i)+': '+data[i][0]+ ' appears ' + str(data[i][1]) +' times...........'
+		output+='#'+str(i+1)+': '+data[i][0]+ ' appears ' + str(data[i][1]) +' times'
 	return output
 
 @app.route('/tag_search', methods=['POST'])

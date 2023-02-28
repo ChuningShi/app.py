@@ -12,7 +12,7 @@ app.secret_key = 'super secret string'  # Change this!
 
 #These will need to be changed according to your creditionals
 app.config['MYSQL_DATABASE_USER'] = 'root'
-app.config['MYSQL_DATABASE_PASSWORD'] = 'SCning149192'
+app.config['MYSQL_DATABASE_PASSWORD'] = '081828'
 app.config['MYSQL_DATABASE_DB'] = 'photoshare'
 app.config['MYSQL_DATABASE_HOST'] = 'localhost'
 mysql.init_app(app)
@@ -306,8 +306,8 @@ def user_activity():
 	for user in data:
 		each_score = photo_count(user[0]) + comment_count(user[0])
 		scores[user[0]] = each_score
-		sort = sorted(scores.items(), key=lambda x: x[1], reverse=True)
-		top_10 = sort[:10]
+	sort = sorted(scores.items(), key=lambda x: x[1], reverse=True)
+	top_10 = sort[:10]
 	return render_template('top_users.html', users=top_10, scores=scores)
 
 @app.route('/album', methods=['GET', 'POST'])
@@ -430,7 +430,7 @@ def delete_photo(photo_id):
 def my_tag():
 	cursor = conn.cursor()
 	email = flask_login.current_user.id
-	cursor.execute("SELECT DISTINCT name FROM Tags, Users, Pictures, Tagged WHERE Users.email = email AND Users.user_id = Pictures.user_id AND Pictures.picture_id = Tagged.picture_id AND Tags.tag_id = Tagged.tag_id")
+	cursor.execute("SELECT DISTINCT name FROM Tags, Users, Pictures, Tagged WHERE Users.email = '{}' AND Users.user_id = Pictures.user_id AND Pictures.picture_id = Tagged.picture_id AND Tags.tag_id = Tagged.tag_id".format(email))
 	tag = cursor.fetchall()
 	tag = [x[0] for x in tag]
 	return render_template('my_tag.html', tag=tag)
@@ -449,7 +449,7 @@ def add_tag():
 	tag = request.form.get('tag')
 	picture_id = request.form.get('photo_id')
 	cursor = conn.cursor()
-	cursor.execute("INSERT INTO Tags (name) VALUES (%s)", (tag))
+	cursor.execute("INSERT INTO Tags (name) VALUES (%s)", tag)
 	cursor.execute("SELECT LAST_INSERT_ID()")
 	tag_id = cursor.fetchall()[0][0]
 
@@ -483,7 +483,6 @@ def tag_popular():
 	data = cursor.fetchall()
 	# convert double nested tuples to list
 	output=''
-	print("This is the first line.\nThis is the second line.")
 	for i in range(3):
 		output+='#'+str(i+1)+': '+data[i][0]+ ' appears ' + str(data[i][1]) +' times'
 	return output

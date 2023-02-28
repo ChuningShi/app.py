@@ -492,8 +492,7 @@ def tag_popular():
 def tag_search():
 	raw_tag = request.form.get('tag')
 	tag=tuple(raw_tag.strip().split())
-	print(tag)
-	count=len(tag)
+	count=len(tag) # number of tags
 	# Construct the SQL query imgdata, picture_id, caption
 	query = '''SELECT p.imgdata, p.picture_id, p.caption
 				FROM Pictures p
@@ -503,7 +502,6 @@ def tag_search():
 				GROUP BY p.picture_id
 				HAVING COUNT(DISTINCT t.tag_id) = {};
 				'''.format(tag, count)
-	print(query)
 	# Execute the query
 	conn = mysql.connect()
 	cursor = conn.cursor()

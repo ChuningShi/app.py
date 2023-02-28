@@ -546,7 +546,7 @@ def comment():
 def comment_search():
 	comment = request.form.get('query')
 	# Construct the SQL query
-	query = '''SELECT u.name, COUNT(*) AS comment_count
+	query = '''SELECT u.fname, COUNT(*) AS comment_count
 				FROM Users u
 				INNER JOIN Comments c ON u.user_id = c.user_id
 				WHERE c.text = '{}'
@@ -555,6 +555,12 @@ def comment_search():
 	conn = mysql.connect()
 	cursor = conn.cursor()
 	cursor.execute(query)
+	data = cursor.fetchall()
+	# convert double nested tuples to list
+	output=''
+	for i in range(len(data)):
+		output+='#'+str(i+1)+': '+data[i][0]+ ' has ' + str(data[i][1]) +' comments'
+	return output
 
 
 # ------------------- like ------------------- #

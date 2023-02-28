@@ -410,19 +410,11 @@ def upload_file():
 		return render_template('upload.html')
 
 def canAddPhoto(uid, album_id):
-	if album is None:
-		return False
-
 	# Check if the user is the owner of the album
 	cursor = conn.cursor()
-	cursor.execute("SELECT user_id FROM Albums WHERE album_id = album_id")
+	cursor.execute("SELECT user_id FROM Albums WHERE album_id = '{}'".format(album_id))
 	owner = cursor.fetchone()[0]
-	if owner == uid:
-		return True
-
-	# The user is not the owner or a collaborator on the album
-	return False
-
+	return owner == uid
 #end photo uploading code
 
 @app.route('/delete/<photo_id>')
@@ -433,17 +425,17 @@ def delete_photo(photo_id):
 	return render_template('hello.html', message='Deleted successfully!')
 
 # ------------------- tag ------------------- #
+# Viewing your photos by tag name
 @app.route('/my_tag')
 def my_tag():
 	cursor = conn.cursor()
 	email = flask_login.current_user.id
-	print(email)
 	cursor.execute("SELECT DISTINCT name FROM Tags, Users, Pictures, Tagged WHERE Users.email = email AND Users.user_id = Pictures.user_id AND Pictures.picture_id = Tagged.picture_id AND Tags.tag_id = Tagged.tag_id")
 	tag = cursor.fetchall()
 	tag = [x[0] for x in tag]
-	print(tag)
 	return render_template('my_tag.html', tag=tag)
 
+# Viewing all photos by tag name
 @app.route('/all_tag')
 def all_tag():
 	cursor = conn.cursor()
@@ -487,8 +479,7 @@ def tag_popular():
 					JOIN Tagged ON Tags.tag_id = Tagged.tag_id\
 					GROUP BY Tags.name\
 					ORDER BY tag_count DESC\
-					LIMIT 3;\
-					")
+					LIMIT 3;")
 	data = cursor.fetchall()
 	# convert double nested tuples to list
 	output=''
@@ -497,6 +488,7 @@ def tag_popular():
 		output+='#'+str(i+1)+': '+data[i][0]+ ' appears ' + str(data[i][1]) +' times'
 	return output
 
+# Photo search
 @app.route('/tag_search', methods=['POST'])
 def tag_search():
 	raw_tag = request.form.get('tag')
@@ -528,13 +520,14 @@ HAVING COUNT(DISTINCT t.id) = <number of tags specified>;
 # ------------------- comment ------------------- #
 @app.route('/add_comment', methods=['POST'])
 def comment():
+	NOT_LOGGED_IN = -1
 	comment = request.form.get('comment')
 	photo_id = request.form.get('photo_id')
 	try:
 		uid = getUserIdFromEmail(flask_login.current_user.id)
 
 	except:
-		uid=-1 # visitor comment? conflict with sql schema
+		uid=NOT_LOGGED_IN # visitor comment? conflict with sql schema
 
 	# Users cannot leave comments on their own photos
 	check = conn.cursor()
@@ -548,10 +541,10 @@ def comment():
 	# normally insert comment
 	cursor = conn.cursor()
 
-	if uid!=-1:
+	if uid!=NOT_LOGGED_IN: # if user is logged in
 		cursor.execute('''INSERT INTO Comments (text, picture_id, user_id) VALUES (%s, %s, %s)''', (comment, photo_id, uid))
-	else:
-		cursor.execute('''INSERT INTO Comments (text, picture_id) VALUES (%s, %s)''', (comment, photo_id)) # visitor comment
+	else: # if user is not logged in
+		cursor.execute('''INSERT INTO Comments (text, picture_id) VALUES (%s, %s)''', (comment, photo_id))
 
 	conn.commit()
 	return render_template('hello.html', message='Comment added!')
@@ -566,6 +559,7 @@ def like(photo_id):
 	conn.commit()
 	return render_template('hello.html', message='Liked!')
 
+# 'You-may-also-like'
 # NOT DEBUGGD
 @app.route('/YMAL')
 def YMAL():

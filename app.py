@@ -420,10 +420,21 @@ def delete_photo(photo_id):
 def my_tag():
 	cursor = conn.cursor()
 	email = flask_login.current_user.id
-	cursor.execute("SELECT DISTINCT name FROM Tags, Users, Pictures, Tagged WHERE Users.email = email AND Users.user_id = Pictures.user_id AND Pictures.picture_id = Tagged.picture_id AND Tags.tag_id = Tagged.tag_id")
+	cursor.execute("SELECT DISTINCT name FROM Tags, Users, Pictures, Tagged\ "
+				   "WHERE Users.email = email AND Users.user_id = Pictures.user_id\ "
+				   "AND Pictures.picture_id = Tagged.picture_id AND Tags.tag_id = Tagged.tag_id")
 	tag = cursor.fetchall()
 	tag = [x[0] for x in tag]
 	return render_template('my_tag.html', tag=tag)
+
+@app.route('/all_tag')
+def all_tag():
+	cursor = conn.cursor()
+	cursor.execute("SELECT DISTINCT name FROM Tags, Pictures, Tagged\ "
+				   "WHERE Pictures.picture_id = Tagged.picture_id AND Tags.tag_id = Tagged.tag_id")
+	tag = cursor.fetchall()
+	tag = [x[0] for x in tag]
+	return render_template('all_tag.html', tag=tag)
 
 @app.route('/add_tag', methods=['POST'])
 def add_tag():

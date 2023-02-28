@@ -513,7 +513,7 @@ HAVING COUNT(DISTINCT t.id) = <number of tags specified>;
 	cursor = conn.cursor()
 	cursor.execute(query)
 
-	photo = cursor.fetchall()
+	photo = getAllPhotos(cursor.fetchall())
 	return render_template('hello.html', photos=photo, base64=base64, message='Search results for: '+raw_tag)
 
 # ------------------- comment ------------------- #

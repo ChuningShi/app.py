@@ -547,10 +547,43 @@ def like(photo_id):
 	conn.commit()
 	return render_template('hello.html', message='Liked!')
 
+# NOT DEBUGGD
+@app.route('/YMAL')
+def YMAL():
+	uid = getUserIdFromEmail(flask_login.current_user.id)
+	cursor = conn.cursor()
+	cursor.execute("SELECT * FROM pictures WHERE user_id = '{}'".format(uid))
+	user_photos = cursor.fetchall()
+
+	# Loop through each photo and retrieve the associated tags
+	tag_counts = {}
+	for photo in user_photos:
+		cursor.execute("SELECT t.name FROM tags t INNER JOIN photo_tags pt ON t.id = pt.tag_id WHERE pt.photo_id = %s",
+					   (photo['id'],))
+		photo_tags = cursor.fetchall()
+
+		# Count the frequency of each tag across all the user's photos
+		for tag in photo_tags:
+			if tag['name'] in tag_counts:
+				tag_counts[tag['name']] += 1
+			else:
+				tag_counts[tag['name']] = 1
+
+	# Select the top three most frequently used tags
+	top_tags = sorted(tag_counts, key=tag_counts.get, reverse=True)[:3]
+
+	# Perform a disjunctive search through all the photos for these three tags
+	cursor.execute(
+		"SELECT p.*, COUNT(DISTINCT t.id) AS num_matched_tags, COUNT(*) AS total_tags FROM photos p INNER JOIN photo_tags pt ON p.id = pt.photo_id INNER JOIN tags t ON pt.tag_id = t.id WHERE t.name IN (%s, %s, %s) AND p.user_id != %s GROUP BY p.id ORDER BY num_matched_tags DESC, total_tags ASC LIMIT 10",
+		(top_tags[0], top_tags[1], top_tags[2], uid))
+	photo = getAllPhotos(cursor.fetchall())
+
+	return render_template('hello.html', photos=photo, base64=base64, message='You may also like...')
+
 #default page
 @app.route("/", methods=['GET'])
 def hello():
-	return render_template('hello.html', message='Welecome to Photoshare')
+	return render_template('hello.html', message='Welcome to Photoshare')
 
 if __name__ == "__main__":
 	app.run(port=5000, debug=True)

@@ -39,24 +39,24 @@ CREATE TABLE Comments(
 comment_id INT NOT NULL AUTO_INCREMENT, 
 text TEXT NOT NULL, 
 date DATETIME DEFAULT CURRENT_TIMESTAMP, 
-user_id INT NOT NULL, 
+user_id INT,
 picture_id INT NOT NULL,
 PRIMARY KEY (comment_id),
-FOREIGN KEY (user_id) REFERENCES Users(user_id) ON DELETE CASCADE, 
+FOREIGN KEY (user_id) REFERENCES Users(user_id) ON DELETE CASCADE,
 FOREIGN KEY (picture_id) REFERENCES Pictures(picture_id) ON DELETE CASCADE
 );
 
 CREATE TABLE Likes(
-user_id INT NOT NULL, 
-picture_id INT NOT NULL, 
+user_id INT NOT NULL,
+picture_id INT NOT NULL,
 PRIMARY KEY (picture_id, user_id),
-FOREIGN KEY (user_id) REFERENCES Users(user_id) ON DELETE CASCADE, 
+FOREIGN KEY (user_id) REFERENCES Users(user_id) ON DELETE CASCADE,
 FOREIGN KEY (picture_id) REFERENCES Pictures(picture_id) ON DELETE CASCADE
 );
 
 CREATE TABLE Tags(
-tag_id INTEGER,
-name VARCHAR(100),
+tag_id INTEGER AUTO_INCREMENT,
+name VARCHAR(100) UNIQUE,
 PRIMARY KEY (tag_id)
 );
 
@@ -76,4 +76,3 @@ PRIMARY KEY(UID1, UID2),
 FOREIGN KEY (UID1) REFERENCES Users (user_id) ON DELETE CASCADE,
 FOREIGN KEY (UID2) REFERENCES USers (user_id) ON DELETE CASCADE
 );
-

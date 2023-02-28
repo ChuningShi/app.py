@@ -542,6 +542,20 @@ def comment():
 	conn.commit()
 	return render_template('hello.html', message='Comment added!')
 
+@app.route('/comment_search', methods=['POST'])
+def comment_search():
+	comment = request.form.get('query')
+	# Construct the SQL query
+	query = '''SELECT u.name, COUNT(*) AS comment_count
+				FROM Users u
+				INNER JOIN Comments c ON u.user_id = c.user_id
+				WHERE c.text = '{}'
+				'''.format(comment)
+	# Execute the query
+	conn = mysql.connect()
+	cursor = conn.cursor()
+	cursor.execute(query)
+
 
 # ------------------- like ------------------- #
 @app.route('/like/<photo_id>')

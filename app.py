@@ -420,15 +420,10 @@ def delete_photo(photo_id):
 def my_tag():
 	cursor = conn.cursor()
 	email = flask_login.current_user.id
-	cursor.execute("SELECT name FROM Tags, Users, Pictures, Tagged WHERE Users.email = email AND Users.user_id = Pictures.user_id AND Pictures.picture_id = Tagged.picture_id AND Tags.tag_id = Tagged.tag_id")
+	cursor.execute("SELECT DISTINCT name FROM Tags, Users, Pictures, Tagged WHERE Users.email = email AND Users.user_id = Pictures.user_id AND Pictures.picture_id = Tagged.picture_id AND Tags.tag_id = Tagged.tag_id")
 	tag = cursor.fetchall()
 	tag = [x[0] for x in tag]
 	return render_template('my_tag.html', tag=tag)
-
-# @app.route('my_tag/<tag>')
-# def tagged_tag(tag):
-#
-# 	return render_template('show_tag.html',  )
 
 @app.route('/add_tag', methods=['POST'])
 def add_tag():
@@ -470,7 +465,10 @@ def tag_popular():
 					".format(tag))
 	data = cursor.fetchall()
 	# convert double nested tuples to list
-	return data[0][0]+', '+data[1][0]+', '+data[2][0]
+	output=''
+	for i in range(3):
+		output+='#'+str(i)+': '+data[i][0]+ ' appears ' + str(data[i][1]) +' times...........'
+	return output
 
 @app.route('/tag_search', methods=['POST'])
 def tag_search():
@@ -490,7 +488,6 @@ def tag_search():
 	cursor.execute(query)
 
 	photo = cursor.fetchall()
-	print(photo)
 	return render_template('hello.html', photos=photo, base64=base64, message='Search results for: '+raw_tag)
 
 # ------------------- comment ------------------- #

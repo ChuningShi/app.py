@@ -12,7 +12,7 @@ app.secret_key = 'super secret string'  # Change this!
 
 # These will need to be changed according to your creditionals
 app.config['MYSQL_DATABASE_USER'] = 'root'
-app.config['MYSQL_DATABASE_PASSWORD'] = '081828'
+app.config['MYSQL_DATABASE_PASSWORD'] = 'SCning149192'
 app.config['MYSQL_DATABASE_DB'] = 'photoshare'
 app.config['MYSQL_DATABASE_HOST'] = 'localhost'
 mysql.init_app(app)
@@ -495,6 +495,7 @@ def my_tag():
 
 # Viewing all photos by tag name
 @app.route('/all_tag')
+@flask_login.login_required
 def all_tag():
     cursor = conn.cursor()
     cursor.execute(
@@ -505,6 +506,7 @@ def all_tag():
 
 
 @app.route('/add_tag', methods=['POST'])
+@flask_login.login_required
 def add_tag():
     tag = request.form.get('tag')
     picture_id = request.form.get('photo_id')
@@ -527,6 +529,7 @@ def add_tag():
 
 
 @app.route('/tag_all', methods=['POST'])
+@flask_login.login_required
 def tag_all():
     tag = request.form.get('tag_name')
     cursor = conn.cursor()
@@ -539,6 +542,7 @@ def tag_all():
 
 
 @app.route('/tag_popular', methods=['GET'])
+@flask_login.login_required
 def tag_popular():
     cursor = conn.cursor()
 
@@ -551,9 +555,13 @@ def tag_popular():
                     LIMIT 3;")
     data = cursor.fetchall()
     # convert double nested tuples to list
-    output = ''
-    for i in range(3):
-        output += '#' + str(i + 1) + ': ' + data[i][0] + ' appears ' + str(data[i][1]) + ' times'
+    output=''
+    if len(data) < 3:
+        for i in range(len(data)):
+            output += '#' + str(i + 1) + ': ' + data[i][0] + ' appears ' + str(data[i][1]) + ' times'
+    else:
+        for i in range(3):
+            output+='#'+str(i+1)+': '+data[i][0]+ ' appears ' + str(data[i][1]) +' times'
     return output
 
 
@@ -642,6 +650,7 @@ def comment_search():
 
 # ------------------- like ------------------- #
 @app.route('/like/<photo_id>')
+@flask_login.login_required
 def like(photo_id):
     cursor = conn.cursor()
     uid = getUserIdFromEmail(flask_login.current_user.id)
@@ -671,7 +680,7 @@ def YMAL():
                     WHERE t.name IN {tag_used}
                     GROUP BY p.picture_id
                     HAVING COUNT(t.tag_id) <= {count}
-                    ORDER BY COUNT(*)
+                    ORDER BY COUNT(*) DESC
                     '''.format(tag_used, count)
 
     # Execute the query

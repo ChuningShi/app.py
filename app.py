@@ -194,12 +194,12 @@ def add_friend():
 		return '''
 		<h2>Add a new friend:</h2>
 			   <form action='friend' method='POST'>
-				<input type='text' name='friendID' id='friendID' placeholder='friend ID'></input>
+				<input type='email' name='friendemail' id='friendemail' placeholder='friend email'></input>
 				<input type='submit' name='submit'></input>
 			   </form></br>
 			   <h2>Search for a friend:</h2>
 			   <form action='friend_search' method='POST'>
-				<input type='text' name='friendID' id='friendID' placeholder='friend ID'></input>
+				<input type='email' name='friendemail' id='friendemail' placeholder='friend email'></input>
 				<input type='submit' name='submit'></input>
 			   </form></br>
 			   <h2>List all friends:</h2>
@@ -214,15 +214,22 @@ def add_friend():
 		   <a href='/'>Home</a>
 			   '''
 	#The request method is POST (page is recieving data)
-	friendID = flask.request.form['friendID']
+	friendEmail = flask.request.form['friendemail']
 	cursor = conn.cursor()
 	uid = getUserIdFromEmail(flask_login.current_user.id)
-	if cursor.execute("SELECT user_id FROM Users WHERE user_id = '{0}'".format(friendID)):
-		cursor.execute("INSERT INTO Friendship (UID1, UID2) VALUES ('{0}', '{1}')".format(uid, friendID))
-		conn.commit()
-		return "You are now friends with: {0}".format(friendID)
+	if cursor.execute("SELECT email FROM Users WHERE email = '{0}'".format(friendEmail)):
+		cursor.execute("SELECT user_id FROM Users WHERE email = '{0}'".format(friendEmail))
+		friendID = cursor.fetchall()[0][0]
+		cursor.execute("SELECT UID2 FROM Friendship WHERE UID1 = '{0}' ".format(uid))
+		UID2 = cursor.fetchall()[0]
+		if friendID not in UID2:
+			cursor.execute("INSERT INTO Friendship (UID1, UID2) VALUES ('{0}', '{1}')".format(uid, friendID))
+			conn.commit()
+			return "You are now friends with: {0}".format(friendEmail)
+		else:
+			return "You already friend with {0}".format(friendEmail)
 	else:
-		return "No user with ID {0} found".format(friendID)
+		return "No user with ID {0} found".format(friendEmail)
 
 @app.route('/friend_search', methods=['POST'])
 @flask_login.login_required
@@ -597,9 +604,8 @@ def YMAL():
 	uid = getUserIdFromEmail(flask_login.current_user.id)
 	cursor.execute("SELECT name FROM Pictures p, Tagged g, Tags t WHERE user_id = '{}' AND p.picture_id = g.picture_id AND g.tag_id = t.tag_id GROUP BY t.tag_id ORDER BY COUNT(*) DESC LIMIT 3".format(uid))
 	tag_used = cursor.fetchall()[0]
-	tag_used=list(tag_used).
 	count = len(tag_used)
-
+	print(tag_used)
 	# Perform a disjunctive search through all the photos for these three tags
 	query = '''SELECT p.imgdata, p.picture_id, p.caption
 					FROM Pictures p
@@ -607,7 +613,7 @@ def YMAL():
 					INNER JOIN tags t ON tgd.tag_id = t.tag_id
 					WHERE t.name IN {}
 					GROUP BY p.picture_id
-					HAVING COUNT(t.tag_id) <= 
+					HAVING COUNT(t.tag_id) <= {}
 					ORDER BY COUNT(*)
 					'''.format(tag_used, count)
 	# Execute the query

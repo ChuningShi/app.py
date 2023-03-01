@@ -579,34 +579,27 @@ def like(photo_id):
 # NOT DEBUGGD
 @app.route('/YMAL')
 def YMAL():
-	uid = getUserIdFromEmail(flask_login.current_user.id)
 	cursor = conn.cursor()
-	cursor.execute("SELECT name FROM Pictures p, Tagged g, Tags t WHERE user_id = '{}' AND p.picture_id = g.picture_id AND g.tag_id = t.tag_id GROUP BY t.tag_id ORDER BY COUNT(*) DESC".format(uid))
+	uid = getUserIdFromEmail(flask_login.current_user.id)
+	cursor.execute("SELECT name FROM Pictures p, Tagged g, Tags t WHERE user_id = '{}' AND p.picture_id = g.picture_id AND g.tag_id = t.tag_id GROUP BY t.tag_id ORDER BY COUNT(*) DESC LIMIT 3".format(uid))
 	tag_used = cursor.fetchall()[0]
-
-	# Loop through each photo and retrieve the associated tags
-	tag_counts = {}
-	for photo in user_photos:
-		cursor.execute("SELECT t.name FROM tags t INNER JOIN photo_tags pt ON t.id = pt.tag_id WHERE pt.photo_id = %s",
-					   (photo['id'],))
-		photo_tags = cursor.fetchall()
-
-		# Count the frequency of each tag across all the user's photos
-		for tag in photo_tags:
-			if tag['name'] in tag_counts:
-				tag_counts[tag['name']] += 1
-			else:
-				tag_counts[tag['name']] = 1
-
-	# Select the top three most frequently used tags
-	top_tags = sorted(tag_counts, key=tag_counts.get, reverse=True)[:3]
+	tag_used=list(tag_used).
+	count = len(tag_used)
 
 	# Perform a disjunctive search through all the photos for these three tags
-	cursor.execute(
-		"SELECT p.*, COUNT(DISTINCT t.id) AS num_matched_tags, COUNT(*) AS total_tags FROM photos p INNER JOIN photo_tags pt ON p.id = pt.photo_id INNER JOIN tags t ON pt.tag_id = t.id WHERE t.name IN (%s, %s, %s) AND p.user_id != %s  BY p.id ORDER BY num_matched_tags DESGROUPC, total_tags ASC LIMIT 10",
-		(top_tags[0], top_tags[1], top_tags[2], uid))
-	photo = getAllPhotos(cursor.fetchall())
-
+	query = '''SELECT p.imgdata, p.picture_id, p.caption
+					FROM Pictures p
+					INNER JOIN tagged tgd ON p.picture_id = tgd.picture_id
+					INNER JOIN tags t ON tgd.tag_id = t.tag_id
+					WHERE t.name IN {}
+					GROUP BY p.picture_id
+					HAVING COUNT(t.tag_id) <= {}
+					ORDER BY COUNT(*)
+					'''.format(tag_used, count)
+	# Execute the query
+	cursor = conn.cursor()
+	cursor.execute(query)
+	photo=getAllPhotos(cursor.fetchall())
 	return render_template('hello.html', photos=photo, base64=base64, message='You may also like...')
 
 #default page

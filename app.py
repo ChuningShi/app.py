@@ -12,7 +12,7 @@ app.secret_key = 'super secret string'  # Change this!
 
 #These will need to be changed according to your creditionals
 app.config['MYSQL_DATABASE_USER'] = 'root'
-app.config['MYSQL_DATABASE_PASSWORD'] = 'SCning149192'
+app.config['MYSQL_DATABASE_PASSWORD'] = '081828'
 app.config['MYSQL_DATABASE_DB'] = 'photoshare'
 app.config['MYSQL_DATABASE_HOST'] = 'localhost'
 mysql.init_app(app)
@@ -372,6 +372,7 @@ def view_album():
 
 # delete album
 @app.route('/album_delete', methods=['POST'])
+@flask_login.login_required
 def delete_album():
 	albumName = flask.request.form['deleteName']
 	cursor = conn.cursor()
@@ -441,6 +442,7 @@ def delete_photo(photo_id):
 # ------------------- tag ------------------- #
 # Viewing your photos by tag name
 @app.route('/my_tag')
+@flask_login.login_required
 def my_tag():
 	cursor = conn.cursor()
 	email = flask_login.current_user.id
@@ -512,17 +514,18 @@ def tag_popular():
 @app.route('/tag_search', methods=['POST'])
 def tag_search():
 	raw_tag = request.form.get('tag')
-	tag=tuple(raw_tag.strip().split())
-	count=len(tag) # number of tags
+	tag=raw_tag.strip().split()
+	count=len(tag)
+	tag=(tuple(tag))
 	# Construct the SQL query imgdata, picture_id, caption
-	query = '''SELECT p.imgdata, p.picture_id, p.caption
+	query = f'''SELECT p.imgdata, p.picture_id, p.caption
 				FROM Pictures p
 				INNER JOIN tagged tgd ON p.picture_id = tgd.picture_id
 				INNER JOIN tags t ON tgd.tag_id = t.tag_id
-				WHERE t.name IN {}
+				WHERE t.name IN {tag}
 				GROUP BY p.picture_id
-				HAVING COUNT(DISTINCT t.tag_id) = {};
-				'''.format(tag, count)
+				HAVING COUNT(DISTINCT t.tag_id) = {count};
+				'''
 	# Execute the query
 	conn = mysql.connect()
 	cursor = conn.cursor()
@@ -567,19 +570,18 @@ def comment():
 def comment_search():
 	comment = request.form.get('comment')
 	# Construct the SQL query
-	query = '''SELECT u.fname, COUNT(*) AS comment_count
+	query = f'''SELECT u.fname, COUNT(*) AS comment_count
 				FROM Users u
 				INNER JOIN Comments c ON c.user_id = u.user_id
-				WHERE c.text = '{}'
+				WHERE c.text = '{comment}'
 				GROUP BY u.user_id
 				ORDER BY comment_count DESC
-				'''.format(comment)
+				'''
 	# Execute the query
 	conn = mysql.connect()
 	cursor = conn.cursor()
 	cursor.execute(query)
 	data = cursor.fetchall()
-	print(data)
 	# convert double nested tuples to list
 	output=''
 	for i in range(len(data)):
@@ -603,7 +605,8 @@ def YMAL():
 	cursor = conn.cursor()
 	uid = getUserIdFromEmail(flask_login.current_user.id)
 	cursor.execute("SELECT name FROM Pictures p, Tagged g, Tags t WHERE user_id = '{}' AND p.picture_id = g.picture_id AND g.tag_id = t.tag_id GROUP BY t.tag_id ORDER BY COUNT(*) DESC LIMIT 3".format(uid))
-	tag_used = cursor.fetchall()[0]
+	tag_used = tuple(list(cursor.fetchall()[0])) # --------------BUG----------------------- #
+	print(tag_used)
 	count = len(tag_used)
 	print(tag_used)
 	# Perform a disjunctive search through all the photos for these three tags

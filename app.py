@@ -67,13 +67,13 @@ def request_loader(request):
 def login():
     if flask.request.method == 'GET':
         return '''
-			   <form action='login' method='POST'>
-				<input type='text' name='email' id='email' placeholder='email'></input>
-				<input type='password' name='password' id='password' placeholder='password'></input>
-				<input type='submit' name='submit'></input>
-			   </form></br>
-		   <a href='/'>Home</a>
-			   '''
+               <form action='login' method='POST'>
+                <input type='text' name='email' id='email' placeholder='email'></input>
+                <input type='password' name='password' id='password' placeholder='password'></input>
+                <input type='submit' name='submit'></input>
+               </form></br>
+           <a href='/'>Home</a>
+               '''
     # The request method is POST (page is recieving data)
     email = flask.request.form['email']
     cursor = conn.cursor()
@@ -89,7 +89,7 @@ def login():
 
     # information did not match
     return "<a href='/login'>Try again</a>\
-			</br><a href='/register'>or make an account</a>"
+            </br><a href='/register'>or make an account</a>"
 
 
 @app.route('/logout')
@@ -168,8 +168,8 @@ def getAllPhotos(data):
         # get tags
         cursor4 = conn.cursor()
         cursor4.execute("SELECT Tags.name FROM Tags\
-						JOIN Tagged ON Tags.tag_id = Tagged.tag_id \
-						WHERE Tagged.picture_id = '{0}'".format(i[1]))
+                        JOIN Tagged ON Tags.tag_id = Tagged.tag_id \
+                        WHERE Tagged.picture_id = '{0}'".format(i[1]))
 
         ret.append((i[0], i[1], i[2], like, like_count, cursor3.fetchall(), cursor4.fetchall()))
 
@@ -211,27 +211,27 @@ def getUserNameFromID(uid):
 def add_friend():
     if flask.request.method == 'GET':
         return '''
-		<h2>Add a new friend:</h2>
-			   <form action='friend' method='POST'>
-				<input type='email' name='friendemail' id='friendemail' placeholder='friend email'></input>
-				<input type='submit' name='submit'></input>
-			   </form></br>
-			   <h2>Search for a friend:</h2>
-			   <form action='friend_search' method='POST'>
-				<input type='email' name='friendemail' id='friendemail' placeholder='friend email'></input>
-				<input type='submit' name='submit'></input>
-			   </form></br>
-			   <h2>List all friends:</h2>
-			   <form action='friend_list' method='POST'>
-				<input type='submit' name='submit'></input>
-			   </form></br>
-				<h2> Friend Recommendations: </h2>
-				<form action='friend_recommendation' method='POST'>
-				<input type='submit' name='submit'></input>
-							   </form></br>
-			<button onclick="history.back()">Go Back</button>
-		   <a href='/'>Home</a>
-			   '''
+        <h2>Add a new friend:</h2>
+               <form action='friend' method='POST'>
+                <input type='email' name='friendemail' id='friendemail' placeholder='friend email'></input>
+                <input type='submit' name='submit'></input>
+               </form></br>
+               <h2>Search for a friend:</h2>
+               <form action='friend_search' method='POST'>
+                <input type='email' name='friendemail' id='friendemail' placeholder='friend email'></input>
+                <input type='submit' name='submit'></input>
+               </form></br>
+               <h2>List all friends:</h2>
+               <form action='friend_list' method='POST'>
+                <input type='submit' name='submit'></input>
+               </form></br>
+                <h2> Friend Recommendations: </h2>
+                <form action='friend_recommendation' method='POST'>
+                <input type='submit' name='submit'></input>
+                               </form></br>
+            <button onclick="history.back()">Go Back</button>
+           <a href='/'>Home</a>
+               '''
     # The request method is POST (page is recieving data)
     friendEmail = flask.request.form['friendemail']
     cursor = conn.cursor()
@@ -346,28 +346,28 @@ def user_activity():
 def album():
     if flask.request.method == 'GET':
         return '''
-		<h2>Create a new album:</h2>
-			   <form action='album' method='POST'>
-				<input type='text' name='albumName' id='albumName' placeholder='album name'></input>
-				<input type='submit' name='submit'></input>
-			   </form></br>
-			   <h2>List all albums:</h2>
-			   <form action='album_list' method='POST'>
-				<input type='submit' name='submit'></input>
-			   </form></br>
-			   	<h2> delete an album:</h2>
-			   <form action='album_delete' method='POST'>
-			   				<input type='text' name='deleteName' id='deleteName' placeholder='album name'></input>
-			   								<input type='submit' name='submit'></input>
-			   </form></br>
-			   <h2> View all photos in an album:</h2>
-			   <form action='album_view' method='POST'>
-			   				<input type='text' name='viewName' id='viewName' placeholder='album name'></input>
-			   								<input type='submit' name='submit'></input>
-			   </form></br>
-			   <button onclick="history.back()">Go Back</button>
-		   <a href='/'>Home</a>
-			   '''
+        <h2>Create a new album:</h2>
+               <form action='album' method='POST'>
+                <input type='text' name='albumName' id='albumName' placeholder='album name'></input>
+                <input type='submit' name='submit'></input>
+               </form></br>
+               <h2>List all albums:</h2>
+               <form action='album_list' method='POST'>
+                <input type='submit' name='submit'></input>
+               </form></br>
+                <h2> delete an album:</h2>
+               <form action='album_delete' method='POST'>
+                            <input type='text' name='deleteName' id='deleteName' placeholder='album name'></input>
+                                            <input type='submit' name='submit'></input>
+               </form></br>
+               <h2> View all photos in an album:</h2>
+               <form action='album_view' method='POST'>
+                            <input type='text' name='viewName' id='viewName' placeholder='album name'></input>
+                                            <input type='submit' name='submit'></input>
+               </form></br>
+               <button onclick="history.back()">Go Back</button>
+           <a href='/'>Home</a>
+               '''
     # The request method is POST (page is recieving data)
     albumName = flask.request.form['albumName']
     cursor = conn.cursor()
@@ -531,9 +531,9 @@ def tag_all():
     tag = request.form.get('tag_name')
     cursor = conn.cursor()
     cursor.execute("SELECT p.imgdata, p.picture_id, p.caption FROM Pictures p\
-	JOIN tagged tgd ON p.picture_id = tgd.picture_id\
-	JOIN tags t ON tgd.tag_id = t.tag_id\
-	WHERE t.name = '{0}'".format(tag))
+    JOIN tagged tgd ON p.picture_id = tgd.picture_id\
+    JOIN tags t ON tgd.tag_id = t.tag_id\
+    WHERE t.name = '{0}'".format(tag))
     photo = getAllPhotos(cursor.fetchall())
     return render_template('hello.html', photos=photo, base64=base64, message='Photo with tag {0} shown'.format(tag))
 
@@ -544,11 +544,11 @@ def tag_popular():
 
     # get 3 most popular tags
     cursor.execute("SELECT Tags.name, COUNT(*) AS tag_count\
-					FROM Tags\
-					JOIN Tagged ON Tags.tag_id = Tagged.tag_id\
-					GROUP BY Tags.name\
-					ORDER BY tag_count DESC\
-					LIMIT 3;")
+                    FROM Tags\
+                    JOIN Tagged ON Tags.tag_id = Tagged.tag_id\
+                    GROUP BY Tags.name\
+                    ORDER BY tag_count DESC\
+                    LIMIT 3;")
     data = cursor.fetchall()
     # convert double nested tuples to list
     output = ''
@@ -567,13 +567,13 @@ def tag_search():
 
     # Construct the SQL query imgdata, picture_id, caption
     query = f'''SELECT p.imgdata, p.picture_id, p.caption
-				FROM Pictures p
-				INNER JOIN tagged tgd ON p.picture_id = tgd.picture_id
-				INNER JOIN tags t ON tgd.tag_id = t.tag_id
-				WHERE t.name IN {tag}
-				GROUP BY p.picture_id
-				HAVING COUNT(DISTINCT t.tag_id) = {count};
-				'''
+                FROM Pictures p
+                INNER JOIN tagged tgd ON p.picture_id = tgd.picture_id
+                INNER JOIN tags t ON tgd.tag_id = t.tag_id
+                WHERE t.name IN {tag}
+                GROUP BY p.picture_id
+                HAVING COUNT(DISTINCT t.tag_id) = {count};
+                '''
     # Execute the query
     conn = mysql.connect()
     cursor = conn.cursor()
@@ -622,12 +622,12 @@ def comment_search():
     comment = request.form.get('comment')
     # Construct the SQL query
     query = f'''SELECT u.fname, COUNT(*) AS comment_count
-				FROM Users u
-				INNER JOIN Comments c ON c.user_id = u.user_id
-				WHERE c.text = '{comment}'
-				GROUP BY u.user_id
-				ORDER BY comment_count DESC
-				'''
+                FROM Users u
+                INNER JOIN Comments c ON c.user_id = u.user_id
+                WHERE c.text = '{comment}'
+                GROUP BY u.user_id
+                ORDER BY comment_count DESC
+                '''
     # Execute the query
     conn = mysql.connect()
     cursor = conn.cursor()
@@ -657,22 +657,23 @@ def YMAL():
     cursor = conn.cursor()
     uid = getUserIdFromEmail(flask_login.current_user.id)
     cursor.execute(f'''SELECT name FROM Pictures p, Tagged g, Tags t WHERE user_id = '{uid}' AND p.picture_id = g.picture_id
-				   AND g.tag_id = t.tag_id GROUP BY t.tag_id ORDER BY COUNT(*) DESC LIMIT 3;''')
-    tag_used = cursor.fetchall().strip().split()
-    print(tag_used)
+                   AND g.tag_id = t.tag_id GROUP BY t.tag_id ORDER BY COUNT(*) DESC LIMIT 3;''')
+    tag_used = list(cursor.fetchall())
+    tag_used = [x[0] for x in tag_used]
     count = len(tag_used)
-    print(tag_used)
+    tag_used = str(set(tag_used)).replace('{', '(').replace('}', ')')
+
     # Perform a disjunctive search through all the photos for these three tags
     query = f'''SELECT p.imgdata, p.picture_id, p.caption
-					FROM Pictures p
-					INNER JOIN tagged tgd ON p.picture_id = tgd.picture_id
-					INNER JOIN tags t ON tgd.tag_id = t.tag_id
-					WHERE t.name IN {tag_used}
-					GROUP BY p.picture_id
-					HAVING COUNT(t.tag_id) <= {count}
-					ORDER BY COUNT(*)
-					'''.format(tag_used, count)
-    print(query)
+                    FROM Pictures p
+                    INNER JOIN tagged tgd ON p.picture_id = tgd.picture_id
+                    INNER JOIN tags t ON tgd.tag_id = t.tag_id
+                    WHERE t.name IN {tag_used}
+                    GROUP BY p.picture_id
+                    HAVING COUNT(t.tag_id) <= {count}
+                    ORDER BY COUNT(*)
+                    '''.format(tag_used, count)
+
     # Execute the query
     cursor = conn.cursor()
     cursor.execute(query)

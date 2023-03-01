@@ -545,15 +545,14 @@ def comment():
 @app.route('/comment_search', methods=['POST'])
 def comment_search():
 	comment = request.form.get('comment')
-	uid = getUserIdFromEmail(flask_login.current_user.id)
 	# Construct the SQL query
-	query = '''SELECT u.fname, COUNT(c.text) AS comment_count
+	query = '''SELECT u.fname, COUNT(*) AS comment_count
 				FROM Users u
-				INNER JOIN Comments c ON c.user_id = '{}'
+				INNER JOIN Comments c ON c.user_id = u.user_id
 				WHERE c.text = '{}'
 				GROUP BY u.user_id
 				ORDER BY comment_count DESC
-				'''.format(uid, comment)
+				'''.format(comment)
 	# Execute the query
 	conn = mysql.connect()
 	cursor = conn.cursor()

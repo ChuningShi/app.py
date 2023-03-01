@@ -607,7 +607,7 @@ def YMAL():
 					INNER JOIN tags t ON tgd.tag_id = t.tag_id
 					WHERE t.name IN {}
 					GROUP BY p.picture_id
-					HAVING COUNT(t.tag_id) <= {}
+					HAVING COUNT(t.tag_id) <= 
 					ORDER BY COUNT(*)
 					'''.format(tag_used, count)
 	# Execute the query

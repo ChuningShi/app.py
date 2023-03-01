@@ -581,8 +581,8 @@ def like(photo_id):
 def YMAL():
 	uid = getUserIdFromEmail(flask_login.current_user.id)
 	cursor = conn.cursor()
-	cursor.execute("SELECT * FROM pictures WHERE user_id = '{}'".format(uid))
-	user_photos = cursor.fetchall()
+	cursor.execute("SELECT name FROM Pictures p, Tagged g, Tags t WHERE user_id = '{}' AND p.picture_id = g.picture_id AND g.tag_id = t.tag_id GROUP BY t.tag_id ORDER BY COUNT(*) DESC".format(uid))
+	tag_used = cursor.fetchall()[0]
 
 	# Loop through each photo and retrieve the associated tags
 	tag_counts = {}

@@ -12,7 +12,7 @@ app.secret_key = 'super secret string'  # Change this!
 
 #These will need to be changed according to your creditionals
 app.config['MYSQL_DATABASE_USER'] = 'root'
-app.config['MYSQL_DATABASE_PASSWORD'] = '081828'
+app.config['MYSQL_DATABASE_PASSWORD'] = 'SCning149192'
 app.config['MYSQL_DATABASE_DB'] = 'photoshare'
 app.config['MYSQL_DATABASE_HOST'] = 'localhost'
 mysql.init_app(app)
@@ -544,18 +544,22 @@ def comment():
 
 @app.route('/comment_search', methods=['POST'])
 def comment_search():
-	comment = request.form.get('query')
+	comment = request.form.get('comment')
+	uid = getUserIdFromEmail(flask_login.current_user.id)
 	# Construct the SQL query
-	query = '''SELECT u.fname, COUNT(*) AS comment_count
+	query = '''SELECT u.fname, COUNT(c.text) AS comment_count
 				FROM Users u
-				INNER JOIN Comments c ON u.user_id = c.user_id
+				INNER JOIN Comments c ON c.user_id = '{}'
 				WHERE c.text = '{}'
-				'''.format(comment)
+				GROUP BY u.user_id
+				ORDER BY comment_count DESC
+				'''.format(uid, comment)
 	# Execute the query
 	conn = mysql.connect()
 	cursor = conn.cursor()
 	cursor.execute(query)
 	data = cursor.fetchall()
+	print(data)
 	# convert double nested tuples to list
 	output=''
 	for i in range(len(data)):
@@ -600,7 +604,7 @@ def YMAL():
 
 	# Perform a disjunctive search through all the photos for these three tags
 	cursor.execute(
-		"SELECT p.*, COUNT(DISTINCT t.id) AS num_matched_tags, COUNT(*) AS total_tags FROM photos p INNER JOIN photo_tags pt ON p.id = pt.photo_id INNER JOIN tags t ON pt.tag_id = t.id WHERE t.name IN (%s, %s, %s) AND p.user_id != %s GROUP BY p.id ORDER BY num_matched_tags DESC, total_tags ASC LIMIT 10",
+		"SELECT p.*, COUNT(DISTINCT t.id) AS num_matched_tags, COUNT(*) AS total_tags FROM photos p INNER JOIN photo_tags pt ON p.id = pt.photo_id INNER JOIN tags t ON pt.tag_id = t.id WHERE t.name IN (%s, %s, %s) AND p.user_id != %s  BY p.id ORDER BY num_matched_tags DESGROUPC, total_tags ASC LIMIT 10",
 		(top_tags[0], top_tags[1], top_tags[2], uid))
 	photo = getAllPhotos(cursor.fetchall())
 

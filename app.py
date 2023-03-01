@@ -12,7 +12,7 @@ app.secret_key = 'super secret string'  # Change this!
 
 #These will need to be changed according to your creditionals
 app.config['MYSQL_DATABASE_USER'] = 'root'
-app.config['MYSQL_DATABASE_PASSWORD'] = 'SCning149192'
+app.config['MYSQL_DATABASE_PASSWORD'] = '081828'
 app.config['MYSQL_DATABASE_DB'] = 'photoshare'
 app.config['MYSQL_DATABASE_HOST'] = 'localhost'
 mysql.init_app(app)
@@ -399,9 +399,16 @@ def upload_file():
 		cursor.execute('''INSERT INTO Pictures (imgdata, user_id, caption, album_id) VALUES (%s, %s, %s, %s )''', (photo_data, uid, caption, album_id))
 		cursor.execute("SELECT LAST_INSERT_ID()")
 		picture_id = cursor.fetchall()[0][0]
-		cursor.execute("INSERT INTO Tags (name) VALUES (%s)", tag)
-		cursor.execute("SELECT LAST_INSERT_ID()")
-		tag_id = cursor.fetchall()[0][0]
+
+		# if tag name already exists, fetch its id from database
+		cursor.execute("SELECT tag_id FROM Tags WHERE name = '{0}'".format(tag))
+		tag_id = cursor.fetchall()
+		if len(tag_id) > 0:
+			tag_id = tag_id[0][0]
+		else:
+			cursor.execute("INSERT INTO Tags (name) VALUES (%s)", tag)
+			cursor.execute("SELECT LAST_INSERT_ID()")
+			tag_id = cursor.fetchall()[0][0]
 		cursor.execute("INSERT INTO Tagged(picture_id, tag_id) VALUES (%s, %s)", (picture_id, tag_id))
 		conn.commit()
 		return render_template('hello.html', name=flask_login.current_user.id, message='Photo uploaded!', photos=getUsersPhotos(uid), base64=base64)
@@ -449,9 +456,16 @@ def add_tag():
 	tag = request.form.get('tag')
 	picture_id = request.form.get('photo_id')
 	cursor = conn.cursor()
-	cursor.execute("INSERT INTO Tags (name) VALUES (%s)", tag)
-	cursor.execute("SELECT LAST_INSERT_ID()")
-	tag_id = cursor.fetchall()[0][0]
+
+	# if tag name already exists, fetch its id from database
+	cursor.execute("SELECT tag_id FROM Tags WHERE name = '{0}'".format(tag))
+	tag_id = cursor.fetchall()
+	if len(tag_id) > 0:
+		tag_id = tag_id[0][0]
+	else:
+		cursor.execute("INSERT INTO Tags (name) VALUES (%s)", tag)
+		cursor.execute("SELECT LAST_INSERT_ID()")
+		tag_id = cursor.fetchall()[0][0]
 
 	# insert into tagged
 	cursor.execute("INSERT INTO Tagged(picture_id, tag_id) VALUES (%s, %s)", (picture_id, tag_id))
@@ -600,6 +614,7 @@ def YMAL():
 
 	# Select the top three most frequently used tags
 	top_tags = sorted(tag_counts, key=tag_counts.get, reverse=True)[:3]
+	print(top_tags)
 
 	# Perform a disjunctive search through all the photos for these three tags
 	cursor.execute(

@@ -2,31 +2,31 @@
 <head>
     <title>Create an account!</title>
 </head>
-{%if not supress%}
-<h1> Email already in use! Use another one or <a href="/login">login</a></h1>
+{% if not supress %}
+    <h1> Email already in use! Use another one or <a href="/login">login</a></h1>
 {% endif %}
-    <body>
-        <div class="title">
-            <h1>Enter your information below</h1>
-        </div>
-        <div id="content">
-            <form method="post" action="{{ url_for('register_user') }}">
-                <label for="fname">Enter firstname:</label>
-                <input type="text" name="fname"  required /><br />
-                <label for="lname">Enter lastname:</label>
-                <input type="text" name="lname"  required /><br />
-                <label for="email">Enter email:</label>
-                <input type="email" name="email"  required /><br />
-                <label for="password">Enter password:</label>
-                <input type="password" name="password"  required /><br />
-                <label for="gender">Enter gender:</label>
-                <input type="text" name="gender" /><br />
-                <label for="dob">Enter date of birth:</label>
-                <input type="date" name="dob"  required /><br />
-                <label for="hometown">Enter hometown:</label>
-                <input type="text" name="hometown" /><br />
-                <input type="submit" />
-            </form>
-         </div>
-    </body>
+<body>
+<div class="title">
+    <h1>Enter your information below</h1>
+</div>
+<div id="content">
+    <form method="post" action="{{ url_for('register_user') }}">
+        <label for="fname">Enter firstname:</label>
+        <input type="text" name="fname" required/><br/>
+        <label for="lname">Enter lastname:</label>
+        <input type="text" name="lname" required/><br/>
+        <label for="email">Enter email:</label>
+        <input type="email" name="email" required/><br/>
+        <label for="password">Enter password:</label>
+        <input type="password" name="password" required/><br/>
+        <label for="gender">Enter gender:</label>
+        <input type="text" name="gender"/><br/>
+        <label for="dob">Enter date of birth:</label>
+        <input type="date" name="dob" required/><br/>
+        <label for="hometown">Enter hometown:</label>
+        <input type="text" name="hometown"/><br/>
+        <input type="submit"/>
+    </form>
+</div>
+</body>
 <a href='/'>Home</a>

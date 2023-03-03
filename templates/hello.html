@@ -1,55 +1,54 @@
 <!doctype html>
 {% if message %}
-<h4>{{message}}!</h4>
+    <h4>{{ message }}!</h4>
 {% endif %}
 <title>Photoshare</title>
 {% if name %}
-<h1>Hello {{ name }}!</h1>
+    <h1>Hello {{ name }}!</h1>
 {% endif %}
 
 {% if photos %}
-{#<h2>Here are your photos</h2>#}
-<ul>
-    {% for photo in photos %}
+    {#<h2>Here are your photos</h2>#}
+    <ul>
+        {% for photo in photos %}
 
-        <img src='data:image/jpg;base64, {{ base64.b64encode(photo[0]).decode("ascii") }}'/>
-        <li>Description: {{photo[2]}}<br>
+            <img src='data:image/jpg;base64, {{ base64.b64encode(photo[0]).decode("ascii") }}'/>
+            <li>Description: {{ photo[2] }}<br>
             <li>Created by: {{ creator }}<br>
-        {{ photo[4] }} people like this photo: {{ photo[3] }}
-    </li>
+                {{ photo[4] }} people like this photo: {{ photo[3] }}
+            </li>
 
-    <button onclick="location.href='/delete/{{photo[1]}}'">Delete</button>
-    <button onclick="location.href='/like/{{photo[1]}}'">Like</button>
+            <button onclick="location.href='/delete/{{ photo[1] }}'">Delete</button>
+            <button onclick="location.href='/like/{{ photo[1] }}'">Like</button>
 
-    <div>
-        Tags: {{ photo[6] }}
-        <form method="post" enctype="multipart/form-data" action="/add_tag">
-            <input type="hidden" name="photo_id" value="{{ photo[1] }}"/>
-            <label for="tag">Add new tag: </label><br/>
-            <input type="text" name="tag" required='required'/>
-            <input type="submit" value="Submit"/>
-        </form>
-    </div>
+            <div>
+                Tags: {{ photo[6] }}
+                <form method="post" enctype="multipart/form-data" action="/add_tag">
+                    <input type="hidden" name="photo_id" value="{{ photo[1] }}"/>
+                    <label for="tag">Add new tag: </label><br/>
+                    <input type="text" name="tag" required='required'/>
+                    <input type="submit" value="Submit"/>
+                </form>
+            </div>
 
-    <div>
-        It has comments: {{ photo[5] }}
-        <form method="post" enctype="multipart/form-data" action="/add_comment">
-            <input type="hidden" name="photo_id" value="{{ photo[1] }}"/>
-            <label for="comment">Make new comment: </label><br/>
-            <input type="text" name="comment" required='required'/>
-            <input type="submit" value="Submit"/>
-        </form>
-    </div>
+            <div>
+                It has comments: {{ photo[5] }}
+                <form method="post" enctype="multipart/form-data" action="/add_comment">
+                    <input type="hidden" name="photo_id" value="{{ photo[1] }}"/>
+                    <label for="comment">Make new comment: </label><br/>
+                    <input type="text" name="comment" required='required'/>
+                    <input type="submit" value="Submit"/>
+                </form>
+            </div>
 
-
-    {% endfor %}
-</ul>
+        {% endfor %}
+    </ul>
 {% endif %}
 
 {% if message is none %}
-<p>You should <a href='/login'>login!</a></p>
+    <p>You should <a href='/login'>login!</a></p>
 {% else %}
-<p> Go to <a href='/profile'>profile?</a></p>
+    <p> Go to <a href='/profile'>profile?</a></p>
 {% endif %}
 
 <ul>
@@ -68,3 +67,5 @@
 </form>
 
 <a href='/logout'>Logout</a>
+
+

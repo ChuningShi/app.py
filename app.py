@@ -268,7 +268,7 @@ def search_friend():
 def list_friend():
     uid = getUserIdFromEmail(flask_login.current_user.id)
     cursor = conn.cursor()
-    cursor.execute("SELECT UID2 FROM Friendship WHERE UID1 = '{0}' OR UID2 = '{0}'".format(uid))
+    cursor.execute("SELECT email FROM Friendship, Users WHERE UID1 = '{0}' AND UID2 = Users.user_id".format(uid))
     data = cursor.fetchall()
     # data= [x[0] for x in data]
     # data= ', '.join(data)

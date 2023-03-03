@@ -150,13 +150,15 @@ def getUsersPhotos(uid):
 
 def getAllPhotos(data):
     ret = []
-    # add count of likes for each photo
+    # data contains many photos, fetch info for each of them
     for i in data:
+        # find people who like this photo
         cursor1 = conn.cursor()
         cursor1.execute("SELECT user_id FROM Likes WHERE picture_id = '{0}'".format(i[1]))
         like = cursor1.fetchall()
-        like = ', '.join([str(i[0]) for i in like])
+        like = ', '.join([str(getUserNameFromID(i[0])) for i in like]) # get name for people who like it
 
+        # add count of likes for this photo
         cursor2 = conn.cursor()
         cursor2.execute("SELECT COUNT(*) FROM Likes WHERE picture_id = '{0}'".format(i[1]))
         like_count = cursor2.fetchone()[0]

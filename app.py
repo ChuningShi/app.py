@@ -38,7 +38,7 @@ class User(flask_login.UserMixin):
 @login_manager.user_loader
 def user_loader(email):
     users = getUserList()
-    if not (email) or email not in str(users):
+    if not email or email not in str(users):
         return
     user = User()
     user.id = email
@@ -49,7 +49,7 @@ def user_loader(email):
 def request_loader(request):
     users = getUserList()
     email = request.form.get('email')
-    if not (email) or email not in str(users):
+    if not email or email not in str(users):
         return
     user = User()
     user.id = email
@@ -57,7 +57,7 @@ def request_loader(request):
     cursor.execute("SELECT password FROM Users WHERE email = '{0}'".format(email))
     data = cursor.fetchall()
     pwd = str(data[0][0])
-    user.is_authenticated = request.form['password'] == pwd
+    # user.is_authenticated = request.form['password'] == pwd
     return user
 
 
@@ -137,7 +137,6 @@ def register_user():
     return render_template('hello.html', name=email, message='Account Created!')
 
 
-
 # ------------------- HELPER -------------------
 def getUsersPhotos(uid):
     cursor = conn.cursor()
@@ -154,7 +153,7 @@ def getAllPhotos(data):
         cursor1.execute("SELECT user_id FROM Likes WHERE picture_id = '{0}'".format(i[1]))
         like = cursor1.fetchall()
         # get name for people who like it
-        like = ', '.join([getUserNameFromID(i[0])[0]+' '+getUserNameFromID(i[0])[1] for i in like])
+        like = ', '.join([getUserNameFromID(i[0])[0] + ' ' + getUserNameFromID(i[0])[1] for i in like])
 
         # add count of likes for this photo
         cursor2 = conn.cursor()
@@ -256,7 +255,6 @@ def add_friend():
 def search_friend():
     friendEmail = flask.request.form['friendemail']
     cursor = conn.cursor()
-    uid = getUserIdFromEmail(flask_login.current_user.id)
     if cursor.execute("SELECT email FROM Users WHERE email = '{0}'".format(friendEmail)):
         return "User with email address {0} found".format(friendEmail)
     else:
@@ -305,7 +303,8 @@ def friend_recommendation():
 
     sorted_recommendations = sorted(recommendations.items(), key=lambda x: x[1], reverse=True)
 
-    return "You should be friends with {0}".format(', '.join([getUserNameFromID(i[0])[0]+' '+getUserNameFromID(i[0])[1] for i in sorted_recommendations]))
+    return "You should be friends with {0}".format(
+        ', '.join([getUserNameFromID(i[0])[0] + ' ' + getUserNameFromID(i[0])[1] for i in sorted_recommendations]))
 
 
 # ------------------- PHOTO ------------------- #
@@ -342,39 +341,9 @@ def user_activity():
     return render_template('top_users.html', users=top_10, scores=scores)
 
 
-@app.route('/album', methods=['GET', 'POST'])
+@app.route('/album', methods=['GET'])
 def album():
-    if flask.request.method == 'GET':
-        return '''
-        <h2>Create a new album:</h2>
-               <form action='album' method='POST'>
-                <input type='text' name='albumName' id='albumName' placeholder='album name' required></input>
-                <input type='submit' name='submit'></input>
-               </form></br>
-               <h2>List all albums:</h2>
-               <form action='album_list' method='POST'>
-                <input type='submit' name='submit'></input>
-               </form></br>
-                <h2> delete an album:</h2>
-               <form action='album_delete' method='POST'>
-                            <input type='text' name='deleteName' id='deleteName' placeholder='album name' required></input>
-                                            <input type='submit' name='submit'></input>
-               </form></br>
-               <h2> View all photos in an album:</h2>
-               <form action='album_view' method='POST'>
-                            <input type='text' name='viewName' id='viewName' placeholder='album name' required></input>
-                                            <input type='submit' name='submit'></input>
-               </form></br>
-               <button onclick="history.back()">Go Back</button>
-           <a href='/'>Home</a>
-               '''
-    # The request method is POST (page is recieving data)
-    albumName = flask.request.form['albumName']
-    cursor = conn.cursor()
-    uid = getUserIdFromEmail(flask_login.current_user.id)
-    cursor.execute("INSERT INTO Albums (Name, user_id) VALUES ('{0}', '{1}')".format(albumName, uid))
-    conn.commit()
-    return "Album {0} created".format(albumName)
+    return render_template('album.html')
 
 
 @app.route('/album_list', methods=['POST'])
@@ -387,6 +356,18 @@ def list_album():
     return "These are all public albums: {0}".format(data)
 
 
+@app.route('/create_album', methods=['POST'])
+@flask_login.login_required
+def create_album():
+    # The request method is POST (page is recieving data)
+    albumName = flask.request.form['albumName']
+    cursor = conn.cursor()
+    uid = getUserIdFromEmail(flask_login.current_user.id)
+    cursor.execute("INSERT INTO Albums (Name, user_id) VALUES ('{0}', '{1}')".format(albumName, uid))
+    conn.commit()
+    return "Album {0} created".format(albumName)
+
+
 @app.route('/album_view', methods=['POST'])
 def view_album():
     aname = flask.request.form['viewName']
@@ -394,7 +375,8 @@ def view_album():
     cursor = conn.cursor()
     cursor.execute("SELECT imgdata, picture_id, caption FROM Pictures WHERE album_id = '{0}'".format(aid))
     data = cursor.fetchall()
-    cursor.execute("SELECT email FROM Users, Albums WHERE Album_id = '{0}' AND Albums.user_id = Users.user_id ".format(aid))
+    cursor.execute(
+        "SELECT email FROM Users, Albums WHERE Album_id = '{0}' AND Albums.user_id = Users.user_id ".format(aid))
     photo = getAllPhotos(data)
     creator = cursor.fetchall()[0][0]
     return render_template('hello.html', photos=photo, creator=creator, base64=base64)
@@ -423,7 +405,7 @@ def protected():
 
 
 # begin photo uploading code
-# photos uploaded using base64 encoding so they can be directly embedded in HTML
+# photos uploaded using base64 encoding, so they can be directly embedded in HTML
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
 
 
@@ -441,7 +423,7 @@ def upload_file():
         caption = request.form.get('caption')
         tag = request.form.get('tag')
         photo_data = imgfile.read()
-        if canAddPhoto(uid, album_id) == False:
+        if not canAddPhoto(uid, album_id):
             return render_template('hello.html', message="You cannot add photo to other's album!")
         cursor = conn.cursor()
         cursor.execute('''INSERT INTO Pictures (imgdata, user_id, caption, album_id) VALUES (%s, %s, %s, %s )''',
@@ -463,7 +445,7 @@ def upload_file():
 
         return render_template('hello.html', name=flask_login.current_user.id, message='Photo uploaded!',
                                photos=getAllPhotos(getUsersPhotos(uid)), base64=base64)
-    # The method is GET so we return a  HTML form to upload the a photo.
+    # The method is GET, so we return an HTML form to upload the photo.
     else:
         return render_template('upload.html')
 
@@ -474,13 +456,15 @@ def canAddPhoto(uid, album_id):
     cursor.execute("SELECT user_id FROM Albums WHERE album_id = '{}'".format(album_id))
     owner = cursor.fetchone()[0]
     return owner == uid
+
+
 # end photo uploading code
 
 @app.route('/delete/<photo_id>')
 @flask_login.login_required
 def delete_photo(photo_id):
     cursor = conn.cursor()
-    uid= getUserIdFromEmail(flask_login.current_user.id)
+    uid = getUserIdFromEmail(flask_login.current_user.id)
     cursor.execute("SELECT user_id FROM Pictures WHERE picture_id = '{}'".format(photo_id))
     if cursor.fetchone()[0] != uid:
         return render_template('hello.html', message="You cannot delete other's photo!")
@@ -589,11 +573,12 @@ def tag_search():
     photo = getAllPhotos(cursor.fetchall())
     return render_template('hello.html', photos=photo, base64=base64, message='Search results for: ' + raw_tag)
 
+
 # Photo search
 @app.route('/my_tag_search', methods=['POST'])
 def my_tag_search():
     raw_tag = request.form.get('tag_name')
-    uid= getUserIdFromEmail(flask_login.current_user.id)
+    uid = getUserIdFromEmail(flask_login.current_user.id)
     tag = raw_tag.strip().split()
     count = len(tag)
     tag = str(set(tag)).replace('{', '(').replace('}', ')')
@@ -615,6 +600,7 @@ def my_tag_search():
 
     photo = getAllPhotos(cursor.fetchall())
     return render_template('hello.html', photos=photo, base64=base64, message='All your photo with tag: ' + raw_tag)
+
 
 # ------------------- comment ------------------- #
 @app.route('/add_comment', methods=['POST'])

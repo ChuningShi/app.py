@@ -12,7 +12,7 @@ app.secret_key = 'super secret string'  # Change this!
 
 # These will need to be changed according to your creditionals
 app.config['MYSQL_DATABASE_USER'] = 'root'
-app.config['MYSQL_DATABASE_PASSWORD'] = 'SCning149192'
+app.config['MYSQL_DATABASE_PASSWORD'] = '081828'
 app.config['MYSQL_DATABASE_DB'] = 'photoshare'
 app.config['MYSQL_DATABASE_HOST'] = 'localhost'
 mysql.init_app(app)
@@ -254,7 +254,7 @@ def add_friend():
 @app.route('/friend_search', methods=['POST'])
 @flask_login.login_required
 def search_friend():
-    friendEmail = flask.request.form['friendEmail']
+    friendEmail = flask.request.form['friendemail']
     cursor = conn.cursor()
     uid = getUserIdFromEmail(flask_login.current_user.id)
     if cursor.execute("SELECT email FROM Users WHERE email = '{0}'".format(friendEmail)):
@@ -405,10 +405,11 @@ def view_album():
 @flask_login.login_required
 def delete_album():
     albumName = flask.request.form['deleteName']
+    uid = getUserIdFromEmail(flask_login.current_user.id)
     cursor = conn.cursor()
-    cursor.execute("DELETE FROM Albums WHERE Name = '{0}'".format(albumName))
+    cursor.execute("DELETE FROM Albums WHERE user_id = '{}' AND Name = '{}'".format(uid, albumName))
     conn.commit()
-    return "Album {0} deleted".format(albumName)
+    return "Album {0} deleted if exists".format(albumName)
 
 
 @app.route('/profile')
@@ -557,13 +558,13 @@ def tag_popular():
                     LIMIT 3;")
     data = cursor.fetchall()
     # convert double nested tuples to list
-    output=''
+    output = ''
     if len(data) < 3:
         for i in range(len(data)):
             output += '#' + str(i + 1) + ': ' + data[i][0] + ' appears ' + str(data[i][1]) + ' times'
     else:
         for i in range(3):
-            output+='#'+str(i+1)+': '+data[i][0]+ ' appears ' + str(data[i][1]) +' times'
+            output += '#' + str(i + 1) + ': ' + data[i][0] + ' appears ' + str(data[i][1]) + ' times'
     return output
 
 

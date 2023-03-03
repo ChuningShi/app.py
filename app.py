@@ -240,7 +240,7 @@ def add_friend():
         cursor.execute("SELECT user_id FROM Users WHERE email = '{0}'".format(friendEmail))
         friendID = cursor.fetchall()[0][0]
         cursor.execute("SELECT UID2 FROM Friendship WHERE UID1 = '{0}' ".format(uid))
-        UID2 = cursor.fetchall()[0]
+        UID2 = cursor.fetchall()
         if friendID not in UID2:
             cursor.execute("INSERT INTO Friendship (UID1, UID2) VALUES ('{0}', '{1}')".format(uid, friendID))
             conn.commit()

@@ -1,10 +1,8 @@
+import base64
 import flask
-from flask import Flask, Response, request, render_template, redirect, url_for
-from flaskext.mysql import MySQL
 import flask_login
-
-# for image uploading
-import os, base64
+from flask import Flask, request, render_template
+from flaskext.mysql import MySQL
 
 mysql = MySQL()
 app = Flask(__name__)
@@ -155,7 +153,8 @@ def getAllPhotos(data):
         cursor1 = conn.cursor()
         cursor1.execute("SELECT user_id FROM Likes WHERE picture_id = '{0}'".format(i[1]))
         like = cursor1.fetchall()
-        like = ', '.join([str(getUserNameFromID(i[0])) for i in like]) # get name for people who like it
+        # get name for people who like it
+        like = ', '.join([getUserNameFromID(i[0])[0]+' '+getUserNameFromID(i[0])[1] for i in like])
 
         # add count of likes for this photo
         cursor2 = conn.cursor()
@@ -184,7 +183,7 @@ def getUserIdFromEmail(email):
 
 
 def isEmailUnique(email):
-    # use this to check if a email has already been registered
+    # use this to check if an email has already been registered
     cursor = conn.cursor()
     if cursor.execute("SELECT email  FROM Users WHERE email = '{0}'".format(email)):
         # this means there are greater than zero entries with that email
@@ -306,7 +305,7 @@ def friend_recommendation():
 
     sorted_recommendations = sorted(recommendations.items(), key=lambda x: x[1], reverse=True)
 
-    return "You should be friends with {0}".format([getUserNameFromID(i[0]) for i in sorted_recommendations])
+    return "You should be friends with {0}".format(', '.join([getUserNameFromID(i[0])[0]+' '+getUserNameFromID(i[0])[1] for i in sorted_recommendations]))
 
 
 # ------------------- PHOTO ------------------- #
@@ -349,7 +348,7 @@ def album():
         return '''
         <h2>Create a new album:</h2>
                <form action='album' method='POST'>
-                <input type='text' name='albumName' id='albumName' placeholder='album name'></input>
+                <input type='text' name='albumName' id='albumName' placeholder='album name' required></input>
                 <input type='submit' name='submit'></input>
                </form></br>
                <h2>List all albums:</h2>
@@ -358,12 +357,12 @@ def album():
                </form></br>
                 <h2> delete an album:</h2>
                <form action='album_delete' method='POST'>
-                            <input type='text' name='deleteName' id='deleteName' placeholder='album name'></input>
+                            <input type='text' name='deleteName' id='deleteName' placeholder='album name' required></input>
                                             <input type='submit' name='submit'></input>
                </form></br>
                <h2> View all photos in an album:</h2>
                <form action='album_view' method='POST'>
-                            <input type='text' name='viewName' id='viewName' placeholder='album name'></input>
+                            <input type='text' name='viewName' id='viewName' placeholder='album name' required></input>
                                             <input type='submit' name='submit'></input>
                </form></br>
                <button onclick="history.back()">Go Back</button>
@@ -424,8 +423,8 @@ def protected():
 
 
 # begin photo uploading code
-# photos uploaded using base64 encoding so they can be directly embeded in HTML
-ALLOWED_EXTENSIONS = set(['png', 'jpg', 'jpeg', 'gif'])
+# photos uploaded using base64 encoding so they can be directly embedded in HTML
+ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
 
 
 def allowed_file(filename):
@@ -475,11 +474,10 @@ def canAddPhoto(uid, album_id):
     cursor.execute("SELECT user_id FROM Albums WHERE album_id = '{}'".format(album_id))
     owner = cursor.fetchone()[0]
     return owner == uid
-
-
 # end photo uploading code
 
 @app.route('/delete/<photo_id>')
+@flask_login.login_required
 def delete_photo(photo_id):
     cursor = conn.cursor()
     uid= getUserIdFromEmail(flask_login.current_user.id)
@@ -671,7 +669,8 @@ def comment_search():
     # convert double nested tuples to list
     output = ''
     for i in range(len(data)):
-        output += '#' + str(i + 1) + ': ' + data[i][0] + ' has ' + str(data[i][1]) + ' comments'
+        output += '#' + str(i + 1) + ': ' + data[i][0] + ' has ' + str(data[i][1]) + ' comments----------'
+
     return output
 
 
@@ -705,10 +704,11 @@ def YMAL():
                     INNER JOIN tagged tgd ON p.picture_id = tgd.picture_id
                     INNER JOIN tags t ON tgd.tag_id = t.tag_id
                     WHERE t.name IN {tag_used}
+                    AND p.user_id != {uid}
                     GROUP BY p.picture_id
                     HAVING COUNT(t.tag_id) <= {count}
                     ORDER BY COUNT(*) DESC
-                    '''.format(tag_used, count)
+                    '''
 
     # Execute the query
     cursor = conn.cursor()

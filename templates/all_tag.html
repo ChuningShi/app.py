@@ -10,16 +10,17 @@
     {% for tag in tag %}
         <form method="post" enctype="multipart/form-data" action="/tag_search">
             <input type="hidden" name="tag" value="{{ tag }}"/>
-            <a href="#" onclick="this.parentNode.submit();">see photo tagged with {{ tag }}<a/><br/>
+            <a href="#" onclick="this.parentNode.submit();">see photo tagged with {{ tag }}</a><br/>
         </form>
     {% endfor %}
-</ul>
+
 <li><a href='/my_tag'>my tags</a></li>
 <li><a href='/tag_popular'>popular tags</a></li>
+</ul>
 
 <form method="post" enctype="multipart/form-data" action="/tag_search">
     <label for="tag">Search photo by tag: </label>
-    <input type="text" name="tag" required='true'/>
+    <input type="text" name="tag" required='required'/>
     <input type="submit" value="Submit"/>
 </form>
 

@@ -254,13 +254,13 @@ def add_friend():
 @app.route('/friend_search', methods=['POST'])
 @flask_login.login_required
 def search_friend():
-    friendID = flask.request.form['friendID']
+    friendEmail = flask.request.form['friendEmail']
     cursor = conn.cursor()
     uid = getUserIdFromEmail(flask_login.current_user.id)
-    if cursor.execute("SELECT user_id FROM Users WHERE user_id = '{0}'".format(friendID)):
-        return "User with ID {0} found".format(friendID)
+    if cursor.execute("SELECT email FROM Users WHERE email = '{0}'".format(friendEmail)):
+        return "User with email address {0} found".format(friendEmail)
     else:
-        return "No user with ID {0} found".format(friendID)
+        return "No user with email address {0} found".format(friendEmail)
 
 
 @app.route('/friend_list', methods=['POST'])
@@ -394,8 +394,10 @@ def view_album():
     cursor = conn.cursor()
     cursor.execute("SELECT imgdata, picture_id, caption FROM Pictures WHERE album_id = '{0}'".format(aid))
     data = cursor.fetchall()
+    cursor.execute("SELECT email FROM Users, Albums WHERE Album_id = '{0}' AND Albums.user_id = Users.user_id ".format(aid))
     photo = getAllPhotos(data)
-    return render_template('hello.html', photos=photo, base64=base64)
+    creator = cursor.fetchall()[0][0]
+    return render_template('hello.html', photos=photo, creator=creator, base64=base64)
 
 
 # delete album

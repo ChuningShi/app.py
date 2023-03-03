@@ -14,7 +14,7 @@
 
             <img src='data:image/jpg;base64, {{ base64.b64encode(photo[0]).decode("ascii") }}'/>
             <li>Description: {{ photo[2] }}<br>
-            <li>Created by: {{ creator }}<br>
+            <li>Created by: {{ photo[7] }}<br>
                 {{ photo[4] }} people like this photo: {{ photo[3] }}
             </li>
 

@@ -170,7 +170,14 @@ def getAllPhotos(data):
                         JOIN Tagged ON Tags.tag_id = Tagged.tag_id \
                         WHERE Tagged.picture_id = '{0}'".format(i[1]))
 
-        ret.append((i[0], i[1], i[2], like, like_count, cursor3.fetchall(), cursor4.fetchall()))
+        # get creator
+        cursor5 = conn.cursor()
+        cursor5.execute(
+            "SELECT fname, lname FROM Users, Pictures WHERE Pictures.user_id = Users.user_id AND Pictures.picture_id = '{0}'".format(i[1]))
+        creator=cursor5.fetchone()
+        creator=creator[0]+' '+creator[1]
+
+        ret.append((i[0], i[1], i[2], like, like_count, cursor3.fetchall(), cursor4.fetchall(), creator))
 
     return ret  # NOTE return a list of tuples, [(imgdata, pid, caption, like, like_count, comments, tags), ...]
 
@@ -375,11 +382,8 @@ def view_album():
     cursor = conn.cursor()
     cursor.execute("SELECT imgdata, picture_id, caption FROM Pictures WHERE album_id = '{0}'".format(aid))
     data = cursor.fetchall()
-    cursor.execute(
-        "SELECT email FROM Users, Albums WHERE Album_id = '{0}' AND Albums.user_id = Users.user_id ".format(aid))
     photo = getAllPhotos(data)
-    creator = cursor.fetchall()[0][0]
-    return render_template('hello.html', photos=photo, creator=creator, base64=base64)
+    return render_template('hello.html', photos=photo, base64=base64)
 
 
 # delete album
@@ -485,7 +489,7 @@ def my_tag():
         WHERE Users.email = '{email}' AND Users.user_id = Pictures.user_id
         AND Pictures.picture_id = Tagged.picture_id AND Tags.tag_id = Tagged.tag_id""")
     tag = cursor.fetchall()
-    tag = [x[0] for x in tag]
+    tag = [x[0] for x in tag if x[0]]
     return render_template('my_tag.html', tag=tag)
 
 

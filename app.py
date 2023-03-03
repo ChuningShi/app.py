@@ -126,19 +126,18 @@ def register_user():
         return flask.redirect(flask.url_for('register'))
     cursor = conn.cursor()
     test = isEmailUnique(email)
-    if test:
-        print(cursor.execute(
-            "INSERT INTO Users (fname, lname, email, password, gender, dob, hometown) VALUES ('{0}', '{1}', '{2}', '{3}', '{4}', '{5}', '{6}')".format(
-                fname, lname, email, password, gender, dob, hometown)))
-        conn.commit()
-        # log user in
-        user = User()
-        user.id = email
-        flask_login.login_user(user)
-        return render_template('hello.html', name=email, message='Account Created!')
-    else:
-        print("couldn't find all tokens")
-        return flask.redirect(flask.url_for('register'))
+    if not test:
+        return "Email already exists! Use another one."
+    cursor.execute(
+        "INSERT INTO Users (fname, lname, email, password, gender, dob, hometown) VALUES ('{0}', '{1}', '{2}', '{3}', '{4}', '{5}', '{6}')".format(
+            fname, lname, email, password, gender, dob, hometown))
+    conn.commit()
+    # log user in
+    user = User()
+    user.id = email
+    flask_login.login_user(user)
+    return render_template('hello.html', name=email, message='Account Created!')
+
 
 
 # ------------------- HELPER -------------------
@@ -386,7 +385,7 @@ def list_album():
     data = cursor.fetchall()
     data = [x[0] for x in data]
     data = ", ".join(data)
-    return "You have the following albums: {0}".format(data)
+    return "These are all public albums: {0}".format(data)
 
 
 @app.route('/album_view', methods=['POST'])
@@ -409,9 +408,13 @@ def delete_album():
     albumName = flask.request.form['deleteName']
     uid = getUserIdFromEmail(flask_login.current_user.id)
     cursor = conn.cursor()
+    cursor.execute("SELECT COUNT(*) FROM Albums WHERE user_id = '{}' AND Name = '{}'".format(uid, albumName))
+    if cursor.fetchall()[0][0] == 0:
+        return "Album {0} does not exist or it belongs to other users!".format(albumName)
+
     cursor.execute("DELETE FROM Albums WHERE user_id = '{}' AND Name = '{}'".format(uid, albumName))
     conn.commit()
-    return "Album {0} deleted if exists".format(albumName)
+    return "Album {0} deleted successfully!".format(albumName)
 
 
 @app.route('/profile')
@@ -458,8 +461,9 @@ def upload_file():
             tag_id = cursor.fetchall()[0][0]
         cursor.execute("INSERT INTO Tagged(picture_id, tag_id) VALUES (%s, %s)", (picture_id, tag_id))
         conn.commit()
+
         return render_template('hello.html', name=flask_login.current_user.id, message='Photo uploaded!',
-                               photos=getUsersPhotos(uid), base64=base64)
+                               photos=getAllPhotos(getUsersPhotos(uid)), base64=base64)
     # The method is GET so we return a  HTML form to upload the a photo.
     else:
         return render_template('upload.html')
@@ -478,6 +482,10 @@ def canAddPhoto(uid, album_id):
 @app.route('/delete/<photo_id>')
 def delete_photo(photo_id):
     cursor = conn.cursor()
+    uid= getUserIdFromEmail(flask_login.current_user.id)
+    cursor.execute("SELECT user_id FROM Pictures WHERE picture_id = '{}'".format(photo_id))
+    if cursor.fetchone()[0] != uid:
+        return render_template('hello.html', message="You cannot delete other's photo!")
     cursor.execute("DELETE FROM Pictures WHERE picture_id = '{0}'".format(photo_id))
     conn.commit()
     return render_template('hello.html', message='Deleted successfully!')
@@ -491,8 +499,9 @@ def my_tag():
     cursor = conn.cursor()
     email = flask_login.current_user.id
     cursor.execute(
-        "SELECT DISTINCT name FROM Tags, Users, Pictures, Tagged WHERE Users.email = '{}' AND Users.user_id = Pictures.user_id AND Pictures.picture_id = Tagged.picture_id AND Tags.tag_id = Tagged.tag_id".format(
-            email))
+        f"""SELECT DISTINCT name FROM Tags, Users, Pictures, Tagged
+        WHERE Users.email = '{email}' AND Users.user_id = Pictures.user_id
+        AND Pictures.picture_id = Tagged.picture_id AND Tags.tag_id = Tagged.tag_id""")
     tag = cursor.fetchall()
     tag = [x[0] for x in tag]
     return render_template('my_tag.html', tag=tag)
@@ -531,19 +540,6 @@ def add_tag():
     cursor.execute("INSERT INTO Tagged(picture_id, tag_id) VALUES (%s, %s)", (picture_id, tag_id))
     conn.commit()
     return render_template('hello.html', message='Tagged successfully!')
-
-
-@app.route('/tag_all', methods=['POST'])
-@flask_login.login_required
-def tag_all():
-    tag = request.form.get('tag_name')
-    cursor = conn.cursor()
-    cursor.execute("SELECT p.imgdata, p.picture_id, p.caption FROM Pictures p\
-    JOIN tagged tgd ON p.picture_id = tgd.picture_id\
-    JOIN tags t ON tgd.tag_id = t.tag_id\
-    WHERE t.name = '{0}'".format(tag))
-    photo = getAllPhotos(cursor.fetchall())
-    return render_template('hello.html', photos=photo, base64=base64, message='Photo with tag {0} shown'.format(tag))
 
 
 @app.route('/tag_popular', methods=['GET'])
@@ -595,6 +591,32 @@ def tag_search():
     photo = getAllPhotos(cursor.fetchall())
     return render_template('hello.html', photos=photo, base64=base64, message='Search results for: ' + raw_tag)
 
+# Photo search
+@app.route('/my_tag_search', methods=['POST'])
+def my_tag_search():
+    raw_tag = request.form.get('tag_name')
+    uid= getUserIdFromEmail(flask_login.current_user.id)
+    tag = raw_tag.strip().split()
+    count = len(tag)
+    tag = str(set(tag)).replace('{', '(').replace('}', ')')
+
+    # Construct the SQL query imgdata, picture_id, caption
+    query = f'''SELECT p.imgdata, p.picture_id, p.caption
+                FROM Pictures p
+                INNER JOIN tagged tgd ON p.picture_id = tgd.picture_id
+                INNER JOIN tags t ON tgd.tag_id = t.tag_id
+                WHERE t.name IN {tag}
+                AND p.user_id = {uid}
+                GROUP BY p.picture_id
+                HAVING COUNT(DISTINCT t.tag_id) = {count};
+                '''
+    # Execute the query
+    conn = mysql.connect()
+    cursor = conn.cursor()
+    cursor.execute(query)
+
+    photo = getAllPhotos(cursor.fetchall())
+    return render_template('hello.html', photos=photo, base64=base64, message='All your photo with tag: ' + raw_tag)
 
 # ------------------- comment ------------------- #
 @app.route('/add_comment', methods=['POST'])

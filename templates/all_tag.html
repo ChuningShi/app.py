@@ -5,21 +5,24 @@
 <body>
 <h1>All Tag</h1>
 <ul>
-    <li><a href='/tag_popular'>popular tags</a></li>
+
 
     {% for tag in tag %}
-        <form method="post" enctype="multipart/form-data" action="/tag_all">
-            <input type="hidden" name="tag_name" value="{{ tag }}"/>
+        <form method="post" enctype="multipart/form-data" action="/tag_search">
+            <input type="hidden" name="tag" value="{{ tag }}"/>
             <a href="#" onclick="this.parentNode.submit();">see photo tagged with {{ tag }}<a/><br/>
         </form>
     {% endfor %}
 </ul>
+<li><a href='/my_tag'>my tags</a></li>
+<li><a href='/tag_popular'>popular tags</a></li>
 
 <form method="post" enctype="multipart/form-data" action="/tag_search">
     <label for="tag">Search photo by tag: </label>
     <input type="text" name="tag" required='true'/>
     <input type="submit" value="Submit"/>
 </form>
+
 
 <button onclick="history.back()">Go Back</button>
 <br/>

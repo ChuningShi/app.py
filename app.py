@@ -668,7 +668,7 @@ def like(photo_id):
     uid = getUserIdFromEmail(flask_login.current_user.id)
     cursor.execute('''INSERT INTO Likes (picture_id, user_id) VALUES (%s, %s)''', (photo_id, uid))
     conn.commit()
-    return render_template('hello.html')
+    return render_template('album.html', message='You liked this photo!')
 
 
 # 'You-may-also-like'

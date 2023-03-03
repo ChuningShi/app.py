@@ -10,7 +10,7 @@ app.secret_key = 'super secret string'  # Change this!
 
 # These will need to be changed according to your creditionals
 app.config['MYSQL_DATABASE_USER'] = 'root'
-app.config['MYSQL_DATABASE_PASSWORD'] = '081828'
+app.config['MYSQL_DATABASE_PASSWORD'] = 'SCning149192'
 app.config['MYSQL_DATABASE_DB'] = 'photoshare'
 app.config['MYSQL_DATABASE_HOST'] = 'localhost'
 mysql.init_app(app)
@@ -697,7 +697,15 @@ def YMAL():
                     AND p.user_id != {uid}
                     GROUP BY p.picture_id
                     HAVING COUNT(t.tag_id) <= {count}
-                    ORDER BY COUNT(*) DESC
+                    ORDER BY COUNT(*) DESC, (
+                    SELECT COUNT(*)
+                    FROM Pictures p2
+                    INNER JOIN tagged tgd2 ON p2.picture_id = tgd2.picture_id
+                    INNER JOIN tags t2 ON tgd2.tag_id = t2.tag_id
+                    WHERE p2.user_id != {uid}
+                    AND p.picture_id = p2.picture_id
+                    AND t2.name NOT IN {tag_used}
+                    GROUP BY p2.picture_id)
                     '''
 
     # Execute the query
